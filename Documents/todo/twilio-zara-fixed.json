@@ -1,0 +1,165 @@
+{
+  "name": "Twilio ZARA Memory Agent - FIXED",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "twilio/wa",
+        "responseMode": "responseNode",
+        "options": {
+          "rawBody": false
+        }
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [100, 300],
+      "id": "webhook-node",
+      "name": "When chat message received",
+      "webhookId": "bc8c3e4a-bdd8-4d62-8967-fa787e57bf0c"
+    },
+    {
+      "parameters": {
+        "jsCode": "// SIMPLIFIED WEBHOOK PROCESSING (n8n compatible)\ntry {\n  const body = $json.body || {};\n  const signature = $json.headers?.['x-twilio-signature'] || '';\n  \n  console.log('🔐 Processing Twilio webhook...');\n  console.log('📋 Body keys:', Object.keys(body));\n  console.log('🔑 Signature present:', !!signature);\n  \n  // Skip crypto verification for now - can be added later via HTTP node\n  console.log('✅ Webhook processing completed');\n  \n  return [{ json: body }];\n  \n} catch (error) {\n  console.error('❌ Webhook processing error:', error.message);\n  return [{ json: $json.body || $json }];\n}"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [300, 300],
+      "id": "process-webhook",
+      "name": "Process Webhook"
+    },
+    {
+      "parameters": {
+        "jsCode": "// PARSE INCOMING WHATSAPP MESSAGE FOR MEMORY SYSTEM\nconst data = $json || {};\n\nconsole.log('📨 Processing WhatsApp message for ZARA:', JSON.stringify(data, null, 2));\n\n// Extract WhatsApp data and format for Memory Picker\nconst parsed = {\n  // Core message data\n  from: data.From || '',\n  to: data.To || '',\n  body: data.Body || '',\n  \n  // WhatsApp specific\n  wa_id: data.WaId || '',\n  message_sid: data.MessageSid || '',\n  \n  // Media handling\n  num_media: parseInt(data.NumMedia || '0'),\n  media_urls: [],\n  \n  // Format for AI agents\n  chat_input: data.Body || '',\n  user_id: data.From || data.WaId || '',\n  session_id: `wa_${data.WaId || data.From}`,\n  \n  // Metadata\n  timestamp: new Date().toISOString(),\n  direction: 'inbound',\n  status: 'received',\n  \n  // Raw data for debugging\n  raw_webhook: data\n};\n\n// Extract media URLs if present\nif (parsed.num_media > 0) {\n  for (let i = 0; i < parsed.num_media; i++) {\n    const mediaUrl = data[`MediaUrl${i}`];\n    if (mediaUrl) parsed.media_urls.push(mediaUrl);\n  }\n}\n\nconsole.log('✅ Parsed for ZARA Memory System:', {\n  from: parsed.from,\n  body: parsed.body,\n  chat_input: parsed.chat_input,\n  session_id: parsed.session_id\n});\n\nreturn [{ json: parsed }];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [500, 300],
+      "id": "parse-message",
+      "name": "Parse Message for ZARA"
+    },
+    {
+      "parameters": {
+        "jsCode": "// MOCK MEMORY PICKER (until OpenAI credentials configured)\nconst data = $json;\n\nconsole.log('🧠 Mock Memory Picker analyzing:', data.chat_input);\n\n// Simple mock analysis\nconst mockAnalysis = {\n  memory_action: 'store',\n  entity_type: 'general',\n  extracted_data: {\n    message: data.chat_input,\n    intent: 'conversation',\n    context: 'whatsapp_onboarding'\n  },\n  confidence: 0.8,\n  next_step: 'generate_response'\n};\n\nconsole.log('✅ Mock Memory Analysis:', mockAnalysis);\n\n// Combine with original data\nconst enhanced = {\n  ...data,\n  memory_analysis: mockAnalysis,\n  tool_calls: [],\n  memory_processed_at: new Date().toISOString()\n};\n\nreturn [{ json: enhanced }];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [700, 400],
+      "id": "memory-picker",
+      "name": "Mock Memory Picker"
+    },
+    {
+      "parameters": {
+        "jsCode": "// MOCK ZARA RESPONSE (until OpenAI credentials configured)\nconst data = $json;\n\nconsole.log('🤖 Mock ZARA generating response for:', data.chat_input);\n\n// Generate contextual response based on message\nlet response = \"\";\nconst message = (data.chat_input || '').toLowerCase();\n\nif (message.includes('hello') || message.includes('hi')) {\n  response = \"Hello! I'm ZARA, your RPD assistant. I'm here to help you with Real Property Development processes. What project are you working on?\";\n} else if (message.includes('test')) {\n  response = \"Test received! 👍 I'm ZARA and I'm ready to help you with your RPD projects. Feel free to share details about your development process.\";\n} else if (message.includes('project')) {\n  response = \"Great! I'd love to learn about your project. Could you tell me what type of property development you're working on? (residential, commercial, mixed-use, etc.)\";\n} else {\n  response = `Thanks for your message: \"${data.chat_input}\". I'm ZARA, your RPD assistant. I'm here to help you track and manage your Real Property Development processes. What can I help you with today?`;\n}\n\nconsole.log('✅ Mock ZARA Response generated:', response.substring(0, 50) + '...');\n\n// Combine with original data\nconst responseData = {\n  ...data,\n  ai_response: response,\n  response_type: 'mock_zara_agent',\n  generated_at: new Date().toISOString(),\n  tokens_used: 0\n};\n\nreturn [{ json: responseData }];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [900, 400],
+      "id": "mock-zara",
+      "name": "Mock ZARA Response"
+    },
+    {
+      "parameters": {
+        "from": "+14155238886",
+        "to": "={{ $json.from.replace('whatsapp:', '') }}",
+        "toWhatsapp": true,
+        "message": "={{ $json.ai_response }}",
+        "options": {
+          "statusCallback": "https://13-54-176-108.nip.io/webhook/twilio/status"
+        }
+      },
+      "type": "n8n-nodes-base.twilio",
+      "typeVersion": 1,
+      "position": [1100, 400],
+      "id": "send-whatsapp",
+      "name": "Send WhatsApp Response",
+      "credentials": {
+        "twilioApi": {
+          "id": "Wm9Sit5boLY4pUjX",
+          "name": "Twilio account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.4,
+      "position": [1300, 400],
+      "id": "respond-webhook",
+      "name": "Respond to Webhook"
+    }
+  ],
+  "connections": {
+    "When chat message received": {
+      "main": [
+        [
+          {
+            "node": "Process Webhook",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Process Webhook": {
+      "main": [
+        [
+          {
+            "node": "Parse Message for ZARA",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Parse Message for ZARA": {
+      "main": [
+        [
+          {
+            "node": "Mock Memory Picker",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Mock Memory Picker": {
+      "main": [
+        [
+          {
+            "node": "Mock ZARA Response",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Mock ZARA Response": {
+      "main": [
+        [
+          {
+            "node": "Send WhatsApp Response",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Send WhatsApp Response": {
+      "main": [
+        [
+          {
+            "node": "Respond to Webhook",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "active": true
+}

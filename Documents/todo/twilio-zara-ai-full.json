@@ -1,0 +1,436 @@
+{
+  "name": "Twilio ZARA AI Agent - Full System",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "twilio/wa",
+        "responseMode": "responseNode",
+        "options": {
+          "rawBody": false
+        }
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [100, 300],
+      "id": "webhook-node",
+      "name": "When chat message received",
+      "webhookId": "bc8c3e4a-bdd8-4d62-8967-fa787e57bf0c"
+    },
+    {
+      "parameters": {
+        "jsCode": "// SIMPLIFIED WEBHOOK PROCESSING (n8n compatible)\ntry {\n  const body = $json.body || {};\n  const signature = $json.headers?.['x-twilio-signature'] || '';\n  \n  console.log('🔐 Processing Twilio webhook...');\n  console.log('📋 Body keys:', Object.keys(body));\n  console.log('🔑 Signature present:', !!signature);\n  \n  // Skip crypto verification for now - can be added later via HTTP node\n  console.log('✅ Webhook processing completed');\n  \n  return [{ json: body }];\n  \n} catch (error) {\n  console.error('❌ Webhook processing error:', error.message);\n  return [{ json: $json.body || $json }];\n}"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [300, 300],
+      "id": "process-webhook",
+      "name": "Process Webhook"
+    },
+    {
+      "parameters": {
+        "jsCode": "// PARSE INCOMING WHATSAPP MESSAGE FOR AI SYSTEM\nconst data = $json || {};\n\nconsole.log('📨 Processing WhatsApp message for ZARA AI:', JSON.stringify(data, null, 2));\n\n// Extract WhatsApp data and format for AI agents\nconst parsed = {\n  // Core message data\n  from: data.From || '',\n  to: data.To || '',\n  body: data.Body || '',\n  \n  // WhatsApp specific\n  wa_id: data.WaId || '',\n  message_sid: data.MessageSid || '',\n  profile_name: data.ProfileName || '',\n  \n  // Media handling\n  num_media: parseInt(data.NumMedia || '0'),\n  media_urls: [],\n  \n  // Format for AI agents\n  chat_input: data.Body || '',\n  user_id: data.From || data.WaId || '',\n  session_id: `wa_${data.WaId || data.From}`,\n  \n  // Metadata for Supabase\n  timestamp: new Date().toISOString(),\n  direction: 'inbound',\n  status: 'received',\n  channel: 'whatsapp',\n  \n  // Raw data for debugging\n  raw_webhook: data\n};\n\n// Extract media URLs if present\nif (parsed.num_media > 0) {\n  for (let i = 0; i < parsed.num_media; i++) {\n    const mediaUrl = data[`MediaUrl${i}`];\n    if (mediaUrl) parsed.media_urls.push(mediaUrl);\n  }\n}\n\nconsole.log('✅ Parsed for ZARA AI System:', {\n  from: parsed.from,\n  body: parsed.body,\n  chat_input: parsed.chat_input,\n  session_id: parsed.session_id,\n  wa_id: parsed.wa_id\n});\n\nreturn [{ json: parsed }];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [500, 300],
+      "id": "parse-message",
+      "name": "Parse Message for AI"
+    },
+    {
+      "parameters": {
+        "operation": "insert",
+        "table": "wa_messages",
+        "data": {
+          "direction": "={{ $json.direction }}",
+          "wa_message_sid": "={{ $json.message_sid }}",
+          "wa_id": "={{ $json.wa_id }}",
+          "from_number": "={{ $json.from }}",
+          "to_number": "={{ $json.to }}",
+          "body": "={{ $json.body }}",
+          "profile_name": "={{ $json.profile_name }}",
+          "media_count": "={{ $json.num_media }}",
+          "media_urls": "={{ JSON.stringify($json.media_urls) }}",
+          "raw_webhook": "={{ JSON.stringify($json.raw_webhook) }}",
+          "received_at": "={{ $json.timestamp }}",
+          "processed_at": "={{ new Date().toISOString() }}",
+          "status": "received"
+        }
+      },
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [700, 200],
+      "id": "store-message",
+      "name": "Store in Supabase",
+      "credentials": {
+        "supabaseApi": {
+          "id": "your-supabase-credential-id",
+          "name": "Supabase account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "model": "gpt-4",
+        "messages": [
+          {
+            "role": "system",
+            "content": "You are ZARA's Memory Picker - a specialized AI agent that analyzes incoming WhatsApp messages to determine what information should be stored, retrieved, or processed for building client context about RPD (Real Property Development) processes.\n\n## Your Role:\n1. **Analyze** the incoming message for RPD-related information\n2. **Determine** if this is:\n   - Client onboarding information\n   - Project details and updates  \n   - Process documentation\n   - General conversation\n   - Questions about existing projects\n\n3. **Extract** key entities:\n   - Client information (name, company, contact details)\n   - Project details (type, location, size, budget)\n   - Process steps and workflows\n   - Expectations and requirements\n   - Timeline and deadlines\n\n4. **Decide** what memory operations to perform using available tools\n\n## Available Tools:\n- `delete_row`: Remove outdated information\n- `get_all_rows`: Retrieve existing context for this client\n- `create_row`: Store new information\n\n## Response Format:\nAlways respond with structured analysis indicating:\n- `memory_action`: 'store' | 'retrieve' | 'update' | 'none'\n- `entity_type`: 'client' | 'project' | 'process' | 'expectation' | 'general'\n- `extracted_data`: relevant structured information\n- `confidence`: how confident you are in this analysis (0-1)\n- `next_step`: what should happen next\n\n## Context Building Strategy:\nYour goal is to build a comprehensive understanding of each client's:\n- **RPD Process Preferences**: How they like to work\n- **Project Types**: What they typically develop\n- **Communication Style**: How they prefer updates\n- **Pain Points**: What challenges they face\n- **Success Metrics**: How they measure project success\n\nThis context will be used by the 'Know it all' agent to provide highly personalized responses."
+          },
+          {
+            "role": "user",
+            "content": "Client WhatsApp ID: {{ $json.wa_id }}\nSession: {{ $json.session_id }}\nMessage: {{ $json.chat_input }}\n\nPlease analyze this message and determine what memory operations should be performed."
+          }
+        ],
+        "tools": [
+          {
+            "type": "function",
+            "function": {
+              "name": "get_all_rows",
+              "description": "Retrieve all stored information for this client from memory tables",
+              "parameters": {
+                "type": "object",
+                "properties": {
+                  "table": {
+                    "type": "string", 
+                    "description": "Table to query: client_context, rpd_projects, rpd_notes, memory_context"
+                  },
+                  "filter": {
+                    "type": "string",
+                    "description": "Filter condition (e.g., wa_id=12345)"
+                  }
+                },
+                "required": ["table"]
+              }
+            }
+          },
+          {
+            "type": "function",
+            "function": {
+              "name": "create_row",
+              "description": "Store new information in memory tables",
+              "parameters": {
+                "type": "object",
+                "properties": {
+                  "table": {
+                    "type": "string",
+                    "description": "Table to insert into: client_context, rpd_projects, rpd_notes, memory_context"
+                  },
+                  "data": {
+                    "type": "object",
+                    "description": "Data to store"
+                  }
+                },
+                "required": ["table", "data"]
+              }
+            }
+          },
+          {
+            "type": "function", 
+            "function": {
+              "name": "delete_row",
+              "description": "Remove outdated information from memory",
+              "parameters": {
+                "type": "object",
+                "properties": {
+                  "table": {
+                    "type": "string"
+                  },
+                  "id": {
+                    "type": "string"
+                  }
+                },
+                "required": ["table", "id"]
+              }
+            }
+          }
+        ],
+        "tool_choice": "auto",
+        "options": {
+          "temperature": 0.3,
+          "maxTokens": 2000
+        }
+      },
+      "type": "n8n-nodes-base.openAi",
+      "typeVersion": 1.3,
+      "position": [700, 400],
+      "id": "memory-picker",
+      "name": "Memory Picker",
+      "credentials": {
+        "openAiApi": {
+          "id": "your-openai-credential-id",
+          "name": "OpenAI account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// PROCESS MEMORY PICKER OUTPUT AND PREPARE FOR KNOW IT ALL\nconst memoryResult = $json;\nconst originalData = $input.first().json;\n\nconsole.log('🧠 Processing Memory Picker Result...');\n\n// Extract AI response and tool calls\nlet analysis = {};\nlet toolCalls = [];\nlet toolResults = [];\n\ntry {\n  if (memoryResult.choices && memoryResult.choices[0]) {\n    const choice = memoryResult.choices[0];\n    \n    // Get the message content (analysis)\n    if (choice.message && choice.message.content) {\n      try {\n        // Try to parse as JSON first\n        analysis = JSON.parse(choice.message.content);\n      } catch (e) {\n        // If not JSON, treat as text analysis\n        analysis = {\n          memory_action: 'store',\n          entity_type: 'general',\n          extracted_data: { content: choice.message.content },\n          confidence: 0.7,\n          next_step: 'generate_contextual_response'\n        };\n      }\n    }\n    \n    // Get tool calls if any were made\n    if (choice.message && choice.message.tool_calls) {\n      toolCalls = choice.message.tool_calls;\n      console.log('🔧 Tool calls made:', toolCalls.length);\n    }\n  }\n} catch (error) {\n  console.error('❌ Error processing Memory Picker result:', error.message);\n  analysis = { \n    error: error.message, \n    memory_action: 'none',\n    entity_type: 'general',\n    extracted_data: {},\n    confidence: 0.1,\n    next_step: 'generate_basic_response'\n  };\n}\n\n// Enhance original data with memory analysis\nconst enhanced = {\n  ...originalData,\n  memory_analysis: analysis,\n  tool_calls: toolCalls,\n  tool_results: toolResults,\n  memory_processed_at: new Date().toISOString(),\n  ai_tokens_used: memoryResult.usage?.total_tokens || 0\n};\n\nconsole.log('✅ Enhanced data for Know it all:', {\n  memory_action: analysis.memory_action,\n  entity_type: analysis.entity_type,\n  tool_calls_count: toolCalls.length,\n  confidence: analysis.confidence\n});\n\nreturn [{ json: enhanced }];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [900, 400],
+      "id": "process-memory",
+      "name": "Process Memory Result"
+    },
+    {
+      "parameters": {
+        "model": "gpt-4",
+        "messages": [
+          {
+            "role": "system",
+            "content": "You are ZARA - an intelligent AI assistant specializing in Real Property Development (RPD) processes. You have access to client memory and context built over time through WhatsApp conversations.\n\n## Your Capabilities:\n1. **Contextual Memory**: Remember client-specific RPD processes, preferences, and expectations\n2. **Personalized Responses**: Provide responses based on accumulated knowledge about each client\n3. **Guided Conversations**: Ask relevant follow-up questions to build better understanding\n4. **RPD Expertise**: Guide clients through RPD workflows, documentation, and best practices\n5. **Adaptive Learning**: Learn and adapt to each client's unique needs and communication style\n\n## Your Personality:\n- **Professional**: Knowledgeable about RPD processes\n- **Helpful**: Always trying to assist and provide value\n- **Contextually Aware**: Reference previous conversations when relevant\n- **Concise**: Keep responses focused and actionable\n- **Warm**: Friendly and approachable tone\n\n## Response Guidelines:\n1. **For first-time contacts**: Welcome them and explain how you can help with RPD processes\n2. **For returning clients**: Reference relevant previous conversations and continue building context\n3. **For onboarding**: Ask structured questions to understand their RPD needs\n4. **For project updates**: Acknowledge and ask relevant follow-up questions\n5. **For questions**: Provide helpful answers while gathering more context\n\n## Memory Context Available:\n- **Client Analysis**: {{ $json.memory_analysis }}\n- **Session**: {{ $json.session_id }}\n- **Tool Calls Made**: {{ $json.tool_calls.length }}\n- **Confidence Level**: {{ $json.memory_analysis.confidence || 'Unknown' }}\n\n## Instructions:\n- Keep responses under 160 characters when possible (WhatsApp friendly)\n- If this seems like onboarding information, acknowledge it and ask ONE relevant follow-up question\n- If this is a project update, confirm receipt and ask for any clarification needed\n- Always end with a clear next step or question to keep the conversation flowing\n- Reference the memory analysis to provide contextual responses"
+          },
+          {
+            "role": "user",
+            "content": "Client Message: {{ $json.chat_input }}\n\nMemory Analysis: {{ JSON.stringify($json.memory_analysis) }}\n\nBased on the memory analysis and conversation context, please provide an appropriate response that continues building our understanding of this client's RPD needs."
+          }
+        ],
+        "options": {
+          "temperature": 0.7,
+          "maxTokens": 300
+        }
+      },
+      "type": "n8n-nodes-base.openAi",
+      "typeVersion": 1.3,
+      "position": [1100, 400],
+      "id": "know-it-all",
+      "name": "Know it all",
+      "credentials": {
+        "openAiApi": {
+          "id": "your-openai-credential-id",
+          "name": "OpenAI account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// EXTRACT AND PREPARE FINAL ZARA RESPONSE\nconst knowItAllResult = $json;\nconst originalData = $input.first().json;\n\nconsole.log('🤖 Processing Know it all response...');\n\nlet finalResponse = \"Thanks for your message! I'm ZARA, your RPD assistant. I'm here to help you with your property development needs.\";\nlet tokensUsed = 0;\n\ntry {\n  if (knowItAllResult.choices && knowItAllResult.choices[0]) {\n    const choice = knowItAllResult.choices[0];\n    \n    if (choice.message && choice.message.content) {\n      finalResponse = choice.message.content.trim();\n    }\n    \n    tokensUsed = knowItAllResult.usage?.total_tokens || 0;\n  }\n} catch (error) {\n  console.error('❌ Error extracting Know it all response:', error.message);\n  finalResponse = \"I encountered an issue processing your message. Could you please try again? I'm here to help with your RPD needs!\";\n}\n\n// Ensure response is not too long for WhatsApp\nif (finalResponse.length > 1500) {\n  finalResponse = finalResponse.substring(0, 1450) + '...';\n}\n\n// Prepare final response data\nconst responseData = {\n  ...originalData,\n  ai_response: finalResponse,\n  response_type: 'zara_ai_agent',\n  generated_at: new Date().toISOString(),\n  total_tokens_used: (originalData.ai_tokens_used || 0) + tokensUsed,\n  memory_confidence: originalData.memory_analysis?.confidence || 0.5\n};\n\nconsole.log('✅ Final ZARA AI Response prepared:', {\n  response_length: finalResponse.length,\n  session_id: responseData.session_id,\n  total_tokens: responseData.total_tokens_used,\n  confidence: responseData.memory_confidence\n});\n\nreturn [{ json: responseData }];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [1300, 400],
+      "id": "extract-response",
+      "name": "Extract ZARA Response"
+    },
+    {
+      "parameters": {
+        "from": "+14155238886",
+        "to": "={{ $json.from.replace('whatsapp:', '') }}",
+        "toWhatsapp": true,
+        "message": "={{ $json.ai_response }}",
+        "options": {
+          "statusCallback": "https://13-54-176-108.nip.io/webhook/twilio/status"
+        }
+      },
+      "type": "n8n-nodes-base.twilio",
+      "typeVersion": 1,
+      "position": [1500, 400],
+      "id": "send-whatsapp",
+      "name": "Send WhatsApp Response",
+      "credentials": {
+        "twilioApi": {
+          "id": "Wm9Sit5boLY4pUjX",
+          "name": "Twilio account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "insert",
+        "table": "wa_responses",
+        "data": {
+          "direction": "outbound",
+          "wa_message_sid": "={{ $json.message_sid }}",
+          "response_to_sid": "={{ $json.message_sid }}",
+          "wa_id": "={{ $json.wa_id }}",
+          "from_number": "+14155238886",
+          "to_number": "={{ $json.from }}",
+          "body": "={{ $json.ai_response }}",
+          "response_type": "={{ $json.response_type }}",
+          "tokens_used": "={{ $json.total_tokens_used }}",
+          "memory_confidence": "={{ $json.memory_confidence }}",
+          "generated_at": "={{ $json.generated_at }}",
+          "sent_at": "={{ new Date().toISOString() }}"
+        }
+      },
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [1500, 200],
+      "id": "store-response",
+      "name": "Store Response",
+      "credentials": {
+        "supabaseApi": {
+          "id": "your-supabase-credential-id",
+          "name": "Supabase account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "upsert",
+        "table": "client_context",
+        "data": {
+          "phone": "={{ $json.from.replace('whatsapp:', '') }}",
+          "wa_id": "={{ $json.wa_id }}",
+          "profile_name": "={{ $json.profile_name }}",
+          "status": "active",
+          "last_interaction_at": "={{ new Date().toISOString() }}",
+          "total_messages": 1,
+          "ai_confidence": "={{ $json.memory_confidence }}",
+          "last_memory_action": "={{ $json.memory_analysis?.memory_action || 'none' }}",
+          "last_entity_type": "={{ $json.memory_analysis?.entity_type || 'general' }}"
+        },
+        "options": {
+          "onConflict": "phone"
+        }
+      },
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [900, 200],
+      "id": "update-client",
+      "name": "Update Client Context",
+      "credentials": {
+        "supabaseApi": {
+          "id": "your-supabase-credential-id",
+          "name": "Supabase account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.4,
+      "position": [1700, 400],
+      "id": "respond-webhook",
+      "name": "Respond to Webhook"
+    }
+  ],
+  "connections": {
+    "When chat message received": {
+      "main": [
+        [
+          {
+            "node": "Process Webhook",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Process Webhook": {
+      "main": [
+        [
+          {
+            "node": "Parse Message for AI",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Parse Message for AI": {
+      "main": [
+        [
+          {
+            "node": "Store in Supabase",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Memory Picker",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Memory Picker": {
+      "main": [
+        [
+          {
+            "node": "Process Memory Result",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Update Client Context",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Process Memory Result": {
+      "main": [
+        [
+          {
+            "node": "Know it all",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Know it all": {
+      "main": [
+        [
+          {
+            "node": "Extract ZARA Response",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extract ZARA Response": {
+      "main": [
+        [
+          {
+            "node": "Send WhatsApp Response",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Send WhatsApp Response": {
+      "main": [
+        [
+          {
+            "node": "Store Response",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Respond to Webhook",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Store Response": {
+      "main": [
+        [
+          {
+            "node": "Respond to Webhook",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Update Client Context": {
+      "main": [
+        []
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "active": false
+}

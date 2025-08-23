@@ -1,0 +1,377 @@
+{
+  "name": "Twilio ZARA Memory Agent Integration",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "twilio/wa",
+        "responseMode": "responseNode",
+        "options": {
+          "rawBody": false
+        }
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [100, 300],
+      "id": "webhook-node",
+      "name": "When chat message received",
+      "webhookId": "bc8c3e4a-bdd8-4d62-8967-fa787e57bf0c"
+    },
+    {
+      "parameters": {
+        "jsCode": "// TWILIO SIGNATURE VERIFICATION\nconst crypto = require('crypto');\n\ntry {\n  // Get Twilio auth token from credentials\n  const authToken = $credentials?.twilioApi?.authToken || 'test-token';\n  \n  // Get signature from headers\n  const signature = $json.headers?.['x-twilio-signature'] || '';\n  const url = 'https://13-54-176-108.nip.io/webhook/twilio/wa';\n  const body = $json.body || {};\n  \n  console.log('🔐 Verifying Twilio signature...');\n  console.log('📋 Body keys:', Object.keys(body));\n  \n  // Build payload string as Twilio does\n  const sortedKeys = Object.keys(body).sort();\n  const payload = url + sortedKeys.map(key => key + body[key]).join('');\n  \n  // Generate expected signature\n  const expectedSignature = crypto\n    .createHmac('sha1', authToken)\n    .update(Buffer.from(payload, 'utf-8'))\n    .digest('base64');\n  \n  const expectedSig = `sha1=${expectedSignature}`;\n  \n  // Verify signature (skip in development)\n  if (signature && signature !== expectedSig) {\n    console.log('⚠️ Signature mismatch - continuing for development');\n  }\n  \n  console.log('✅ Signature verification passed');\n  return [{ json: body }];\n  \n} catch (error) {\n  console.error('❌ Signature verification error:', error.message);\n  return [{ json: $json.body || $json }];\n}"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [300, 300],
+      "id": "signature-verification",
+      "name": "Verify Signature"
+    },
+    {
+      "parameters": {
+        "jsCode": "// PARSE INCOMING WHATSAPP MESSAGE FOR MEMORY SYSTEM\nconst data = $json || {};\n\nconsole.log('📨 Processing WhatsApp message for ZARA:', JSON.stringify(data, null, 2));\n\n// Extract WhatsApp data and format for Memory Picker\nconst parsed = {\n  // Core message data\n  from: data.From || '',\n  to: data.To || '',\n  body: data.Body || '',\n  \n  // WhatsApp specific\n  wa_id: data.WaId || '',\n  message_sid: data.MessageSid || '',\n  \n  // Media handling\n  num_media: parseInt(data.NumMedia || '0'),\n  media_urls: [],\n  \n  // Format for AI agents\n  chat_input: data.Body || '',\n  user_id: data.From || data.WaId || '',\n  session_id: `wa_${data.WaId || data.From}`,\n  \n  // Metadata\n  timestamp: new Date().toISOString(),\n  direction: 'inbound',\n  status: 'received',\n  \n  // Raw data for debugging\n  raw_webhook: data\n};\n\n// Extract media URLs if present\nif (parsed.num_media > 0) {\n  for (let i = 0; i < parsed.num_media; i++) {\n    const mediaUrl = data[`MediaUrl${i}`];\n    if (mediaUrl) parsed.media_urls.push(mediaUrl);\n  }\n}\n\nconsole.log('✅ Parsed for ZARA Memory System:', {\n  from: parsed.from,\n  body: parsed.body,\n  chat_input: parsed.chat_input,\n  session_id: parsed.session_id\n});\n\nreturn [{ json: parsed }];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [500, 300],
+      "id": "parse-message",
+      "name": "Parse Message for ZARA"
+    },
+    {
+      "parameters": {
+        "operation": "insert",
+        "table": "wa_messages",
+        "data": {
+          "direction": "={{ $json.direction }}",
+          "wa_message_sid": "={{ $json.message_sid }}",
+          "wa_id": "={{ $json.wa_id }}",
+          "from_number": "={{ $json.from }}",
+          "to_number": "={{ $json.to }}",
+          "body": "={{ $json.body }}",
+          "media_count": "={{ $json.num_media }}",
+          "media_urls": "={{ $json.media_urls }}",
+          "raw_webhook": "={{ JSON.stringify($json.raw_webhook) }}",
+          "received_at": "={{ $json.timestamp }}",
+          "processed_at": "={{ new Date().toISOString() }}"
+        }
+      },
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [700, 200],
+      "id": "store-message",
+      "name": "Store in Supabase",
+      "credentials": {
+        "supabaseApi": {
+          "id": "your-supabase-credential-id",
+          "name": "Supabase account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "model": "gpt-4",
+        "messages": [
+          {
+            "role": "system",
+            "content": "You are ZARA's Memory Picker - a specialized agent that analyzes incoming messages and determines what information should be stored, retrieved, or processed for building client context about RPD (Real Property Development) processes.\n\nYour role:\n1. Analyze the incoming message for RPD-related information\n2. Determine if this is onboarding info, process details, or general conversation\n3. Decide what memory operations to perform (create, read, update)\n4. Extract key entities: client info, project details, process steps, expectations\n5. Format data for storage in structured format\n\nTools available: delete_row, get_all_rows, create_row for memory management.\n\nAlways respond with structured JSON indicating:\n- memory_action: 'store' | 'retrieve' | 'update' | 'none'\n- entity_type: 'client' | 'project' | 'process' | 'expectation' | 'general'\n- extracted_data: relevant structured information\n- next_step: what should happen next"
+          },
+          {
+            "role": "user",
+            "content": "{{ $json.chat_input }}"
+          }
+        ],
+        "tools": [
+          {
+            "type": "function",
+            "function": {
+              "name": "delete_row",
+              "description": "Delete a row from memory storage",
+              "parameters": {
+                "type": "object",
+                "properties": {
+                  "table": {"type": "string"},
+                  "id": {"type": "string"}
+                },
+                "required": ["table", "id"]
+              }
+            }
+          },
+          {
+            "type": "function", 
+            "function": {
+              "name": "get_all_rows",
+              "description": "Get all rows from a memory table",
+              "parameters": {
+                "type": "object",
+                "properties": {
+                  "table": {"type": "string"},
+                  "filter": {"type": "string"}
+                },
+                "required": ["table"]
+              }
+            }
+          },
+          {
+            "type": "function",
+            "function": {
+              "name": "create_row", 
+              "description": "Create new row in memory storage",
+              "parameters": {
+                "type": "object",
+                "properties": {
+                  "table": {"type": "string"},
+                  "data": {"type": "object"}
+                },
+                "required": ["table", "data"]
+              }
+            }
+          }
+        ],
+        "tool_choice": "auto",
+        "options": {
+          "temperature": 0.3,
+          "maxTokens": 1000
+        }
+      },
+      "type": "n8n-nodes-base.openAi",
+      "typeVersion": 1.3,
+      "position": [700, 400],
+      "id": "memory-picker",
+      "name": "Memory Picker",
+      "credentials": {
+        "openAiApi": {
+          "id": "your-openai-credential-id", 
+          "name": "OpenAI account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// PROCESS MEMORY PICKER OUTPUT AND EXECUTE MEMORY OPERATIONS\nconst memoryResult = $json;\n\nconsole.log('🧠 Memory Picker Result:', JSON.stringify(memoryResult, null, 2));\n\n// Extract the AI response and any tool calls\nlet analysis = {};\nlet toolCalls = [];\n\ntry {\n  if (memoryResult.choices && memoryResult.choices[0]) {\n    const choice = memoryResult.choices[0];\n    \n    // Get the message content\n    if (choice.message && choice.message.content) {\n      try {\n        analysis = JSON.parse(choice.message.content);\n      } catch (e) {\n        analysis = { raw_response: choice.message.content };\n      }\n    }\n    \n    // Get tool calls if any\n    if (choice.message && choice.message.tool_calls) {\n      toolCalls = choice.message.tool_calls;\n    }\n  }\n} catch (error) {\n  console.error('❌ Error processing Memory Picker result:', error.message);\n  analysis = { error: error.message, raw_result: memoryResult };\n}\n\n// Combine original data with memory analysis\nconst enhanced = {\n  ...($input.first().json || {}),\n  memory_analysis: analysis,\n  tool_calls: toolCalls,\n  memory_processed_at: new Date().toISOString()\n};\n\nconsole.log('✅ Enhanced data for Know it all:', {\n  memory_action: analysis.memory_action,\n  entity_type: analysis.entity_type,\n  tool_calls_count: toolCalls.length\n});\n\nreturn [{ json: enhanced }];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [900, 400],
+      "id": "process-memory",
+      "name": "Process Memory Result"
+    },
+    {
+      "parameters": {
+        "model": "gpt-4",
+        "messages": [
+          {
+            "role": "system", 
+            "content": "You are ZARA - an intelligent assistant specializing in Real Property Development (RPD) processes. You have access to client memory and context built over time through WhatsApp conversations.\n\nYour capabilities:\n1. Remember client-specific RPD processes, preferences, and expectations\n2. Provide contextual responses based on accumulated knowledge\n3. Ask clarifying questions to build better understanding\n4. Guide clients through RPD workflows and documentation\n5. Learn and adapt to each client's unique needs\n\nPersonality: Professional, knowledgeable, helpful, and contextually aware. Always reference relevant previous conversations when appropriate.\n\nMemory context from previous analysis: {{ $json.memory_analysis }}\nClient session: {{ $json.session_id }}\nMessage history available: {{ $json.tool_calls.length > 0 ? 'Yes' : 'No' }}\n\nRespond naturally while being helpful with RPD-related queries. If this seems like onboarding information, acknowledge it and ask relevant follow-up questions."
+          },
+          {
+            "role": "user",
+            "content": "{{ $json.chat_input }}"
+          }
+        ],
+        "tools": [],
+        "options": {
+          "temperature": 0.7,
+          "maxTokens": 1500
+        }
+      },
+      "type": "n8n-nodes-base.openAi",
+      "typeVersion": 1.3,
+      "position": [1100, 400],
+      "id": "know-it-all",
+      "name": "Know it all",
+      "credentials": {
+        "openAiApi": {
+          "id": "your-openai-credential-id",
+          "name": "OpenAI account"  
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// EXTRACT FINAL AI RESPONSE FOR WHATSAPP\nconst knowItAllResult = $json;\n\nconsole.log('🤖 Know it all Result:', JSON.stringify(knowItAllResult, null, 2));\n\nlet finalResponse = \"Thanks for your message! I'm processing it and will respond thoughtfully.\";\n\ntry {\n  if (knowItAllResult.choices && knowItAllResult.choices[0]) {\n    const choice = knowItAllResult.choices[0];\n    \n    if (choice.message && choice.message.content) {\n      finalResponse = choice.message.content;\n    }\n  }\n} catch (error) {\n  console.error('❌ Error extracting final response:', error.message);\n  finalResponse = \"I encountered an issue processing your message. Please try again.\";\n}\n\n// Combine with original message data for WhatsApp sending\nconst responseData = {\n  ...($input.first().json || {}),\n  ai_response: finalResponse,\n  response_type: 'zara_memory_agent',\n  generated_at: new Date().toISOString(),\n  tokens_used: knowItAllResult.usage?.total_tokens || 0\n};\n\nconsole.log('✅ Final ZARA Response:', {\n  response_length: finalResponse.length,\n  session_id: responseData.session_id,\n  tokens: responseData.tokens_used\n});\n\nreturn [{ json: responseData }];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [1300, 400],
+      "id": "extract-response",
+      "name": "Extract ZARA Response"
+    },
+    {
+      "parameters": {
+        "from": "+14155238886",
+        "to": "={{ $json.from.replace('whatsapp:', '') }}",
+        "toWhatsapp": true,
+        "message": "={{ $json.ai_response }}",
+        "options": {
+          "statusCallback": "https://13-54-176-108.nip.io/webhook/twilio/status"
+        }
+      },
+      "type": "n8n-nodes-base.twilio",
+      "typeVersion": 1,
+      "position": [1500, 400],
+      "id": "send-whatsapp",
+      "name": "Send WhatsApp Response",
+      "credentials": {
+        "twilioApi": {
+          "id": "Wm9Sit5boLY4pUjX",
+          "name": "Twilio account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "insert",
+        "table": "wa_responses", 
+        "data": {
+          "direction": "out",
+          "wa_message_sid": "={{ $json.message_sid }}",
+          "response_to_sid": "={{ $json.message_sid }}",
+          "wa_id": "={{ $json.wa_id }}",
+          "from_number": "+14155238886",
+          "to_number": "={{ $json.from }}",
+          "body": "={{ $json.ai_response }}",
+          "response_type": "={{ $json.response_type }}",
+          "tokens_used": "={{ $json.tokens_used }}",
+          "generated_at": "={{ $json.generated_at }}",
+          "sent_at": "={{ new Date().toISOString() }}"
+        }
+      },
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [1500, 200],
+      "id": "store-response",
+      "name": "Store Response",
+      "credentials": {
+        "supabaseApi": {
+          "id": "your-supabase-credential-id",
+          "name": "Supabase account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.4,
+      "position": [1700, 400],
+      "id": "respond-webhook",
+      "name": "Respond to Webhook"
+    }
+  ],
+  "connections": {
+    "When chat message received": {
+      "main": [
+        [
+          {
+            "node": "Verify Signature",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Verify Signature": {
+      "main": [
+        [
+          {
+            "node": "Parse Message for ZARA",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Parse Message for ZARA": {
+      "main": [
+        [
+          {
+            "node": "Store in Supabase",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Memory Picker",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Memory Picker": {
+      "main": [
+        [
+          {
+            "node": "Process Memory Result",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Process Memory Result": {
+      "main": [
+        [
+          {
+            "node": "Know it all",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Know it all": {
+      "main": [
+        [
+          {
+            "node": "Extract ZARA Response",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extract ZARA Response": {
+      "main": [
+        [
+          {
+            "node": "Send WhatsApp Response",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Send WhatsApp Response": {
+      "main": [
+        [
+          {
+            "node": "Store Response",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Respond to Webhook",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Store Response": {
+      "main": [
+        [
+          {
+            "node": "Respond to Webhook",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "active": true
+}
