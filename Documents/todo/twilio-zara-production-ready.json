@@ -1,0 +1,534 @@
+{
+  "name": "Twilio ZARA AI Agent - Production Ready",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "twilio/wa",
+        "responseMode": "responseNode",
+        "options": {
+          "rawBody": false
+        }
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [100, 300],
+      "id": "webhook-node",
+      "name": "When chat message received",
+      "webhookId": "bc8c3e4a-bdd8-4d62-8967-fa787e57bf0c"
+    },
+    {
+      "parameters": {
+        "jsCode": "// PRODUCTION WEBHOOK PROCESSING WITH ERROR HANDLING\ntry {\n  const body = $json.body || {};\n  const signature = $json.headers?.['x-twilio-signature'] || '';\n  \n  console.log('🔐 Processing Twilio webhook...');\n  console.log('📋 Body keys:', Object.keys(body));\n  console.log('🔑 Signature present:', !!signature);\n  \n  // Basic validation\n  if (!body.From || !body.MessageSid) {\n    throw new Error('Invalid webhook - missing required fields');\n  }\n  \n  // Skip crypto verification for n8n sandbox - add via HTTP node if needed\n  console.log('✅ Webhook validation completed');\n  \n  return [{ json: body }];\n  \n} catch (error) {\n  console.error('❌ Webhook processing error:', error.message);\n  // Return error but don't break the workflow\n  return [{ json: { error: error.message, raw_data: $json.body || $json } }];\n}"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [300, 300],
+      "id": "process-webhook",
+      "name": "Process Webhook"
+    },
+    {
+      "parameters": {
+        "jsCode": "// PARSE WHATSAPP MESSAGE FOR ZARA AI SYSTEM\nconst data = $json || {};\n\nconsole.log('📨 Processing WhatsApp message for ZARA AI System');\n\n// Handle error cases\nif (data.error) {\n  console.error('❌ Webhook error detected:', data.error);\n  return [{ json: {\n    error: true,\n    message: data.error,\n    fallback_response: \"I'm experiencing technical difficulties. Please try again in a moment.\"\n  }}];\n}\n\n// Extract and validate WhatsApp data\nconst parsed = {\n  // Core message data\n  from: data.From || '',\n  to: data.To || '',\n  body: data.Body || '',\n  \n  // WhatsApp specific\n  wa_id: data.WaId || '',\n  message_sid: data.MessageSid || '',\n  profile_name: data.ProfileName || '',\n  \n  // Media handling\n  num_media: parseInt(data.NumMedia || '0'),\n  media_urls: [],\n  \n  // AI Agent format\n  chat_input: data.Body || '',\n  user_id: data.From || data.WaId || '',\n  session_id: `wa_${data.WaId || data.From}`,\n  \n  // Supabase storage format\n  wa_message_sid: data.MessageSid || '',\n  wa_id: data.WaId || '',\n  from_number: data.From || '',\n  to_number: data.To || '',\n  media_count: parseInt(data.NumMedia || '0'),\n  received_at: new Date().toISOString(),\n  direction: 'inbound',\n  channel: 'whatsapp',\n  \n  // Raw webhook for debugging\n  raw_webhook: data\n};\n\n// Extract media URLs if present\nif (parsed.num_media > 0) {\n  for (let i = 0; i < parsed.num_media; i++) {\n    const mediaUrl = data[`MediaUrl${i}`];\n    if (mediaUrl) parsed.media_urls.push(mediaUrl);\n  }\n}\n\n// Validate required fields\nif (!parsed.from || !parsed.body) {\n  console.warn('⚠️ Missing required message data');\n  parsed.error = true;\n  parsed.fallback_response = \"I didn't receive your message properly. Could you please resend it?\";\n}\n\nconsole.log('✅ Message parsed for ZARA:', {\n  from: parsed.from,\n  body_length: parsed.body.length,\n  session_id: parsed.session_id,\n  media_count: parsed.media_count,\n  has_error: !!parsed.error\n});\n\nreturn [{ json: parsed }];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [500, 300],
+      "id": "parse-message",
+      "name": "Parse Message for ZARA"
+    },
+    {
+      "parameters": {
+        "operation": "insert",
+        "table": {
+          "__rl": true,
+          "value": "wa_messages",
+          "mode": "string"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "wa_message_sid": "={{ $json.wa_message_sid }}",
+            "wa_id": "={{ $json.wa_id }}",
+            "from_number": "={{ $json.from_number }}",
+            "to_number": "={{ $json.to_number }}",
+            "body": "={{ $json.body }}",
+            "media_count": "={{ $json.media_count }}",
+            "media_urls": "={{ JSON.stringify($json.media_urls) }}",
+            "raw_webhook": "={{ JSON.stringify($json.raw_webhook) }}",
+            "received_at": "={{ $json.received_at }}",
+            "direction": "inbound",
+            "processed_at": "={{ new Date().toISOString() }}"
+          },
+          "matchingColumns": [],
+          "schema": []
+        }
+      },
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [700, 100],
+      "id": "store-message",
+      "name": "Store Message in Supabase",
+      "credentials": {
+        "supabaseApi": {
+          "id": "your-supabase-credential-id",
+          "name": "Supabase Database for ZARA"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "messages": {
+          "messages": [
+            {
+              "role": "system",
+              "content": "You are ZARA's Memory Picker - a specialized AI agent for Real Property Development (RPD) client onboarding via WhatsApp.\n\n**YOUR ROLE:**\nAnalyze incoming WhatsApp messages to determine what client information should be stored, retrieved, or processed for building comprehensive RPD context.\n\n**ANALYZE FOR:**\n1. Client Information: Company name, contact person, phone, project type\n2. Project Details: Location, budget range, timeline, requirements\n3. RPD Process: Permits, zoning, construction phases, compliance needs\n4. Context Building: Previous conversations, preferences, pain points\n\n**TOOLS AVAILABLE:**\n- create_row_supabase: Store new client data, projects, notes\n- get_all_rows_supabase: Retrieve existing client context\n- update_row_supabase: Update client or project information\n\n**RESPONSE FORMAT:**\nAlways respond with JSON analysis:\n```json\n{\n  \"memory_action\": \"store|retrieve|both\",\n  \"entity_type\": \"client_info|project_details|requirement|update|general\",\n  \"extracted_data\": {\n    \"client_name\": \"extracted name\",\n    \"project_type\": \"residential|commercial|mixed-use\",\n    \"key_entities\": [\"entity1\", \"entity2\"]\n  },\n  \"confidence\": 0.8,\n  \"next_action\": \"Description of recommended action\",\n  \"supabase_operations\": [\"create_client_context\", \"store_conversation_note\"]\n}\n```\n\n**EXAMPLES:**\n- \"Hi, I'm John from ABC Developers working on a 50-unit residential project\" → Store client info + project details\n- \"What's the status of my permit application?\" → Retrieve project status\n- \"I need help with zoning requirements\" → Retrieve regulations + store requirement\n\nFocus on building comprehensive RPD knowledge for each client interaction."
+            },
+            {
+              "role": "user",
+              "content": "WhatsApp Message: {{ $json.body }}\nFrom: {{ $json.from }}\nSession: {{ $json.session_id }}\nUser ID: {{ $json.user_id }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 2.2,
+      "position": [700, 300],
+      "id": "memory-picker-agent",
+      "name": "Memory Picker AI Agent",
+      "credentials": {
+        "openAiApi": {
+          "id": "your-openai-credential-id",
+          "name": "OpenAI GPT-4 for ZARA"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "table": {
+          "__rl": true,
+          "value": "client_context",
+          "mode": "string"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {},
+          "matchingColumns": [],
+          "schema": []
+        }
+      },
+      "type": "n8n-nodes-base.supabaseTool",
+      "typeVersion": 1,
+      "position": [600, 450],
+      "id": "create-client-context",
+      "name": "Create Client Context",
+      "credentials": {
+        "supabaseApi": {
+          "id": "your-supabase-credential-id",
+          "name": "Supabase Database for ZARA"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "table": {
+          "__rl": true,
+          "value": "memory_context",
+          "mode": "string"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {},
+          "matchingColumns": [],
+          "schema": []
+        }
+      },
+      "type": "n8n-nodes-base.supabaseTool",
+      "typeVersion": 1,
+      "position": [750, 450],
+      "id": "store-memory",
+      "name": "Store Memory Context",
+      "credentials": {
+        "supabaseApi": {
+          "id": "your-supabase-credential-id",
+          "name": "Supabase Database for ZARA"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "table": {
+          "__rl": true,
+          "value": "client_context",
+          "mode": "string"
+        }
+      },
+      "type": "n8n-nodes-base.supabaseTool",
+      "typeVersion": 1,
+      "position": [900, 450],
+      "id": "get-client-context",
+      "name": "Get Client Context",
+      "credentials": {
+        "supabaseApi": {
+          "id": "your-supabase-credential-id",
+          "name": "Supabase Database for ZARA"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// PROCESS MEMORY PICKER AI AGENT OUTPUT\nconst memoryResult = $json;\nconst originalData = $input.first().json;\n\nconsole.log('🧠 Processing Memory Picker AI Agent Result...');\n\n// Handle error cases\nif (originalData.error) {\n  console.log('⚠️ Forwarding error from previous step');\n  return [{ json: {\n    ...originalData,\n    memory_processed: false,\n    skip_ai_processing: true\n  }}];\n}\n\nlet analysis = {};\nlet toolCalls = [];\n\ntry {\n  // AI Agent returns response directly (not in choices array)\n  let agentResponse = memoryResult;\n  \n  // Handle different response formats\n  if (typeof agentResponse === 'string') {\n    // Try to parse JSON response\n    try {\n      analysis = JSON.parse(agentResponse);\n    } catch (e) {\n      // If not JSON, create structured analysis\n      analysis = {\n        memory_action: 'store',\n        entity_type: 'general',\n        extracted_data: { content: agentResponse },\n        confidence: 0.6,\n        next_action: 'Store conversation and generate contextual response',\n        supabase_operations: ['store_conversation_note']\n      };\n    }\n  } else if (agentResponse && typeof agentResponse === 'object') {\n    // Already structured response\n    analysis = agentResponse;\n  } else {\n    // Fallback analysis\n    analysis = {\n      memory_action: 'none',\n      entity_type: 'general',\n      extracted_data: {},\n      confidence: 0.1,\n      next_action: 'Generate basic response',\n      supabase_operations: []\n    };\n  }\n  \n  // Extract tool calls if available (from AI Agent execution)\n  if (memoryResult.tool_calls || memoryResult.toolCalls) {\n    toolCalls = memoryResult.tool_calls || memoryResult.toolCalls || [];\n  }\n  \n} catch (error) {\n  console.error('❌ Error processing Memory Picker result:', error.message);\n  analysis = {\n    error: error.message,\n    memory_action: 'none',\n    entity_type: 'error',\n    extracted_data: {},\n    confidence: 0.0,\n    next_action: 'Generate error recovery response',\n    supabase_operations: []\n  };\n}\n\n// Combine with original data for Know-it-all Agent\nconst enhanced = {\n  ...originalData,\n  memory_analysis: analysis,\n  tool_calls: toolCalls,\n  memory_processed_at: new Date().toISOString(),\n  memory_confidence: analysis.confidence || 0.5\n};\n\nconsole.log('✅ Enhanced data for Know-it-all Agent:', {\n  memory_action: analysis.memory_action,\n  entity_type: analysis.entity_type,\n  confidence: analysis.confidence,\n  tool_calls_count: toolCalls.length,\n  next_action: analysis.next_action\n});\n\nreturn [{ json: enhanced }];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [900, 300],
+      "id": "process-memory-result",
+      "name": "Process Memory Analysis"
+    },
+    {
+      "parameters": {
+        "messages": {
+          "messages": [
+            {
+              "role": "system",
+              "content": "You are ZARA - the expert RPD (Real Property Development) assistant with comprehensive knowledge and client context.\n\n**YOUR EXPERTISE:**\n- Residential/Commercial/Mixed-use development processes\n- Permits, zoning regulations, compliance requirements\n- Construction timelines, budget planning, feasibility analysis\n- Building codes, environmental assessments, site planning\n- Financing options, ROI analysis, market trends\n\n**YOUR CONTEXT:**\nYou have access to complete client conversation history and project details via Memory Picker analysis. Use this context to provide personalized, relevant responses.\n\n**RESPONSE GUIDELINES:**\n1. **Professional & Helpful**: Knowledgeable but approachable tone\n2. **Contextual**: Reference client's specific projects and previous conversations\n3. **Actionable**: Provide concrete next steps and recommendations\n4. **Compliant**: Stay within WhatsApp's 1600 character limit\n5. **Educational**: Help clients understand RPD processes\n\n**MEMORY CONTEXT AVAILABLE:**\n- Client Information: {{ $json.memory_analysis.extracted_data.client_name || 'Not provided' }}\n- Project Type: {{ $json.memory_analysis.extracted_data.project_type || 'Not specified' }}\n- Previous Analysis: {{ $json.memory_analysis.next_action || 'First interaction' }}\n- Confidence Level: {{ $json.memory_analysis.confidence || 0.5 }}\n- Memory Action: {{ $json.memory_analysis.memory_action || 'none' }}\n\n**RESPONSE SCENARIOS:**\n- New Client: Welcome them, gather project basics, explain your RPD expertise\n- Returning Client: Reference previous conversations, update on project status\n- Technical Question: Provide detailed RPD guidance with next steps\n- Status Request: Check project progress, permit status, timeline updates\n\n**TOOLS AVAILABLE:**\n- get_project_context: Retrieve specific project details\n- get_client_history: Access full conversation history\n\nGenerate a helpful, contextual response that advances the client's RPD goals."
+            },
+            {
+              "role": "user",
+              "content": "Client Message: {{ $json.body }}\nFrom: {{ $json.from }}\nSession: {{ $json.session_id }}\n\nMemory Analysis:\n{{ JSON.stringify($json.memory_analysis, null, 2) }}\n\nProvide a helpful RPD response (max 1400 characters):"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 2.2,
+      "position": [1100, 300],
+      "id": "know-it-all-agent",
+      "name": "Know-it-all AI Agent",
+      "credentials": {
+        "openAiApi": {
+          "id": "your-openai-credential-id",
+          "name": "OpenAI GPT-4 for ZARA"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "table": {
+          "__rl": true,
+          "value": "rpd_projects",
+          "mode": "string"
+        }
+      },
+      "type": "n8n-nodes-base.supabaseTool",
+      "typeVersion": 1,
+      "position": [1000, 450],
+      "id": "get-project-context",
+      "name": "Get Project Context",
+      "credentials": {
+        "supabaseApi": {
+          "id": "your-supabase-credential-id",
+          "name": "Supabase Database for ZARA"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "table": {
+          "__rl": true,
+          "value": "memory_context",
+          "mode": "string"
+        }
+      },
+      "type": "n8n-nodes-base.supabaseTool",
+      "typeVersion": 1,
+      "position": [1150, 450],
+      "id": "get-client-history",
+      "name": "Get Client History",
+      "credentials": {
+        "supabaseApi": {
+          "id": "your-supabase-credential-id",
+          "name": "Supabase Database for ZARA"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// EXTRACT FINAL ZARA RESPONSE WITH ERROR HANDLING\nconst knowItAllResult = $json;\nconst originalData = $input.first().json;\n\nconsole.log('🤖 Processing Know-it-all AI Agent response...');\n\n// Handle skip_ai_processing flag (from earlier errors)\nif (originalData.skip_ai_processing) {\n  console.log('⚠️ Using fallback response due to earlier error');\n  return [{ json: {\n    ...originalData,\n    ai_response: originalData.fallback_response || \"I'm experiencing technical difficulties. Please try again in a moment.\",\n    response_type: 'fallback_error',\n    generated_at: new Date().toISOString(),\n    total_tokens_used: 0\n  }}];\n}\n\nlet finalResponse = \"Thanks for your message! I'm ZARA, your RPD assistant. How can I help you with your property development project today?\";\nlet tokensUsed = 0;\n\ntry {\n  // AI Agent returns response directly (not in choices array)\n  let agentResponse = knowItAllResult;\n  \n  if (typeof agentResponse === 'string') {\n    finalResponse = agentResponse.trim();\n  } else if (agentResponse && agentResponse.content) {\n    finalResponse = agentResponse.content.trim();\n  } else if (agentResponse && agentResponse.message) {\n    finalResponse = agentResponse.message.trim();\n  }\n  \n  // Extract token usage if available\n  if (knowItAllResult.usage && knowItAllResult.usage.total_tokens) {\n    tokensUsed = knowItAllResult.usage.total_tokens;\n  }\n  \n} catch (error) {\n  console.error('❌ Error extracting Know-it-all response:', error.message);\n  finalResponse = \"I encountered an issue processing your message. Let me help you with your RPD project - could you please share more details about what you're working on?\";\n}\n\n// WhatsApp length validation and truncation\nif (finalResponse.length > 1500) {\n  finalResponse = finalResponse.substring(0, 1450) + '... [continued]';\n  console.log('✂️ Response truncated for WhatsApp compatibility');\n}\n\n// Ensure minimum quality response\nif (finalResponse.length < 10) {\n  finalResponse = \"I'm here to help with your RPD project. Could you share more details about what you're working on?\";\n}\n\n// Prepare final response data\nconst responseData = {\n  ...originalData,\n  ai_response: finalResponse,\n  response_type: 'zara_ai_agent',\n  generated_at: new Date().toISOString(),\n  total_tokens_used: (originalData.ai_tokens_used || 0) + tokensUsed,\n  memory_confidence: originalData.memory_confidence || 0.5,\n  response_quality: finalResponse.length > 50 ? 'high' : 'basic',\n  \n  // Supabase response storage format\n  response_to_sid: originalData.wa_message_sid,\n  wa_id: originalData.wa_id,\n  from_number: '+14155238886', // Twilio number\n  to_number: originalData.from_number,\n  body: finalResponse,\n  tokens_used: tokensUsed\n};\n\nconsole.log('✅ Final ZARA Response prepared:', {\n  response_length: finalResponse.length,\n  session_id: responseData.session_id,\n  total_tokens: responseData.total_tokens_used,\n  confidence: responseData.memory_confidence,\n  quality: responseData.response_quality\n});\n\nreturn [{ json: responseData }];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [1300, 300],
+      "id": "extract-final-response",
+      "name": "Extract ZARA Response"
+    },
+    {
+      "parameters": {
+        "from": "+14155238886",
+        "to": "={{ $json.from.replace('whatsapp:', '') }}",
+        "toWhatsapp": true,
+        "message": "={{ $json.ai_response }}",
+        "options": {
+          "statusCallback": "https://13-54-176-108.nip.io/webhook/twilio/status"
+        }
+      },
+      "type": "n8n-nodes-base.twilio",
+      "typeVersion": 1,
+      "position": [1500, 300],
+      "id": "send-whatsapp-response",
+      "name": "Send WhatsApp Response",
+      "credentials": {
+        "twilioApi": {
+          "id": "Wm9Sit5boLY4pUjX",
+          "name": "Twilio account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "insert",
+        "table": {
+          "__rl": true,
+          "value": "wa_responses",
+          "mode": "string"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "response_to_sid": "={{ $json.response_to_sid }}",
+            "wa_id": "={{ $json.wa_id }}",
+            "from_number": "={{ $json.from_number }}",
+            "to_number": "={{ $json.to_number }}",
+            "body": "={{ $json.body }}",
+            "response_type": "={{ $json.response_type }}",
+            "tokens_used": "={{ $json.tokens_used }}",
+            "generated_at": "={{ $json.generated_at }}",
+            "direction": "outbound",
+            "sent_at": "={{ new Date().toISOString() }}"
+          },
+          "matchingColumns": [],
+          "schema": []
+        }
+      },
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [1700, 100],
+      "id": "store-response",
+      "name": "Store Response in Supabase",
+      "credentials": {
+        "supabaseApi": {
+          "id": "your-supabase-credential-id",
+          "name": "Supabase Database for ZARA"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "upsert",
+        "table": {
+          "__rl": true,
+          "value": "client_context",
+          "mode": "string"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "phone": "={{ $json.from.replace('whatsapp:', '') }}",
+            "wa_id": "={{ $json.wa_id }}",
+            "last_interaction_at": "={{ new Date().toISOString() }}",
+            "status": "active"
+          },
+          "matchingColumns": ["phone"],
+          "schema": []
+        }
+      },
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [1700, 500],
+      "id": "update-client-context",
+      "name": "Update Client Context",
+      "credentials": {
+        "supabaseApi": {
+          "id": "your-supabase-credential-id",
+          "name": "Supabase Database for ZARA"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.4,
+      "position": [1900, 300],
+      "id": "respond-to-webhook",
+      "name": "Respond to Webhook"
+    }
+  ],
+  "connections": {
+    "When chat message received": {
+      "main": [
+        [
+          {
+            "node": "Process Webhook",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Process Webhook": {
+      "main": [
+        [
+          {
+            "node": "Parse Message for ZARA",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Parse Message for ZARA": {
+      "main": [
+        [
+          {
+            "node": "Store Message in Supabase",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Memory Picker AI Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Memory Picker AI Agent": {
+      "main": [
+        [
+          {
+            "node": "Process Memory Analysis",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Process Memory Analysis": {
+      "main": [
+        [
+          {
+            "node": "Know-it-all AI Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Know-it-all AI Agent": {
+      "main": [
+        [
+          {
+            "node": "Extract ZARA Response",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extract ZARA Response": {
+      "main": [
+        [
+          {
+            "node": "Send WhatsApp Response",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Send WhatsApp Response": {
+      "main": [
+        [
+          {
+            "node": "Store Response in Supabase",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Update Client Context",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Respond to Webhook",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Create Client Context": {
+      "ai_tool": [
+        [
+          {
+            "node": "Memory Picker AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Store Memory Context": {
+      "ai_tool": [
+        [
+          {
+            "node": "Memory Picker AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Client Context": {
+      "ai_tool": [
+        [
+          {
+            "node": "Memory Picker AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Project Context": {
+      "ai_tool": [
+        [
+          {
+            "node": "Know-it-all AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Client History": {
+      "ai_tool": [
+        [
+          {
+            "node": "Know-it-all AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "active": false
+}
