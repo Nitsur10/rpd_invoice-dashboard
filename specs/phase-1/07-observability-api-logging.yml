@@ -1,4 +1,4 @@
-title: Add structured API logging for latency and errors
+title: "[IDASH] Add structured API logging for latency and errors
 description: |
   Introduce structured logging around /api/* route handlers with correlation IDs
   to capture latency, status codes, and errors. Avoid logging PII.

@@ -1,4 +1,4 @@
-title: Add contract tests for invoices and stats APIs
+title: "[IDASH] Add contract tests for invoices and stats APIs
 description: |
   Implement integration tests to verify filtering, sorting, pagination, and error
   handling for /api/invoices and /api/stats. Establish a baseline for CI quality gates.

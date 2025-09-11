@@ -21,9 +21,14 @@ sync:
   labelsFrom: labels             # Map labels from spec files
   assigneesFrom: assignees       # Map assignees from spec files
   milestoneFrom: milestone       # Map milestone from spec files
+  include:                       # Tight scoping for repo-specific specs
+    - specs/**/*.yml
+    - specs/**/*.yaml
+    - specs/**/*.md
 
 defaults:
   milestone: Phase 1 — Stabilize & Secure
   labels:
     - phase/1
     - orchestrated
+    - repo/invoice-dashboard

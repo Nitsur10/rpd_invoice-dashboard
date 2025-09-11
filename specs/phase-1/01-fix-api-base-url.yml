@@ -1,4 +1,4 @@
-title: Fix API base URL to use relative '/api'
+title: "[IDASH] Fix API base URL to use relative '/api'
 description: |
   Update API client to use a relative base path so both SSR and browser calls
   target the co-located Next.js API routes. Remove hardcoded localhost ports.

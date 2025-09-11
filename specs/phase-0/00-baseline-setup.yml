@@ -1,4 +1,4 @@
-title: Phase 0 — Baseline Setup
+title: "[IDASH] Phase 0 — Baseline Setup"
 description: |
   Establish a clean baseline of the current codebase and repository settings
   before starting Phase 1. Create a baseline branch and tag, protect main,

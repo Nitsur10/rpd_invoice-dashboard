@@ -1,4 +1,4 @@
-title: Align UI with canonical snake_case fields and remove legacy references
+title: "[IDASH] Align UI with canonical snake_case fields and remove legacy references
 description: |
   Update invoices UI to use snake_case fields from Supabase and remove legacy
   camelCase references. Use computed status from due_date where needed.

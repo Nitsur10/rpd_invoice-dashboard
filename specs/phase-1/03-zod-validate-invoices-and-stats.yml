@@ -1,4 +1,4 @@
-title: Add zod validation for invoices and stats APIs
+title: "[IDASH] Add zod validation for invoices and stats APIs
 description: |
   Validate query/body inputs for /api/invoices, /api/invoices/[id], and /api/stats
   using zod. Enforce field whitelisting, type coercion, size caps, and

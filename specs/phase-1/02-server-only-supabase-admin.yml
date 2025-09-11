@@ -1,4 +1,4 @@
-title: Move Supabase admin client to server-only module
+title: "[IDASH] Move Supabase admin client to server-only module
 description: |
   Create server-only Supabase admin client in src/lib/server/supabase-admin.ts with
   `import 'server-only'`. Ensure API routes import from this module and no client

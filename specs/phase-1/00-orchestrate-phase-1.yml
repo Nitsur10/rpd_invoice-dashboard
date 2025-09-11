@@ -1,4 +1,4 @@
-title: Phase 1 — Orchestration and Quality Gates
+title: "[IDASH] Phase 1 — Orchestration and Quality Gates"
 description: |
   Coordinate Phase 1 tasks to stabilize and secure the dashboard foundation.
   Ensure API stability, security hygiene, UI field alignment, tests, and logging

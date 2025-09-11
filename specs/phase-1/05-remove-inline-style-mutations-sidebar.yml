@@ -1,4 +1,4 @@
-title: Replace sidebar inline style mutations with Tailwind/token-based classes
+title: "[IDASH] Replace sidebar inline style mutations with Tailwind/token-based classes
 description: |
   Remove onMouseEnter/Leave style mutations in the sidebar and express hover/active
   states through utility classes and tokens for performance and consistency.
