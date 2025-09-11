@@ -30,3 +30,7 @@ This project uses SpecKit for specification-driven development. See `/specs` for
 ## CI Status
 
 ✅ Initial CI pipeline ready for testing
+
+## Secrets Configured
+
+✅ GitHub secrets added for Supabase integration
