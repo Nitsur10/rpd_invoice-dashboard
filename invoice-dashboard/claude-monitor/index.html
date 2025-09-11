@@ -1,0 +1,258 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🎯 Claude Code - Live Agent Monitor</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.js"></script>
+    <style>
+        body { font-family: 'Inter', system-ui, sans-serif; }
+        .agent-card { transition: all 0.3s ease; }
+        .agent-card:hover { transform: translateY(-2px); box-shadow: 0 8px 25px rgba(0,0,0,0.1); }
+        .token-progress { background: linear-gradient(90deg, #3b82f6 0%, #1d4ed8 100%); }
+        .status-active { animation: pulse 2s infinite; }
+        .metric-card { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); }
+        .cost-card { background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%); }
+        .session-card { background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%); }
+        @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.7; } }
+        @keyframes slideIn { from { opacity: 0; transform: translateX(-10px); } to { opacity: 1; transform: translateX(0); } }
+        .activity-item { animation: slideIn 0.3s ease-out; }
+    </style>
+</head>
+<body class="bg-gray-50">
+    <div class="min-h-screen p-6">
+        <!-- Header -->
+        <div class="mb-8">
+            <div class="flex items-center justify-between mb-4">
+                <div>
+                    <h1 class="text-4xl font-bold text-gray-900 mb-2">🎯 Claude Code - Live Agent Monitor</h1>
+                    <p class="text-gray-600">Real-time agent activity, token usage, and Claude Code integration monitoring</p>
+                </div>
+                <div class="text-right">
+                    <div class="text-sm text-gray-500">Last Update</div>
+                    <div class="font-mono text-lg" id="last-update">--:--:--</div>
+                </div>
+            </div>
+            
+            <div class="flex items-center space-x-6 text-sm">
+                <div class="flex items-center space-x-2">
+                    <div class="w-3 h-3 bg-green-500 rounded-full status-active"></div>
+                    <span>Claude Code Connected</span>
+                </div>
+                <div class="flex items-center space-x-2">
+                    <div class="w-3 h-3 bg-blue-500 rounded-full"></div>
+                    <span id="agent-count">8 Agents Available</span>
+                </div>
+                <div class="flex items-center space-x-2">
+                    <div class="w-3 h-3 bg-purple-500 rounded-full"></div>
+                    <span id="session-status">Session Active</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Claude Code Metrics Dashboard -->
+        <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+            <!-- Token Usage -->
+            <div class="bg-white rounded-lg p-6 shadow-sm border">
+                <div class="flex items-center justify-between mb-4">
+                    <div>
+                        <p class="text-sm text-gray-600">Token Usage</p>
+                        <p class="text-2xl font-bold text-blue-600" id="token-usage">32k / 200k</p>
+                    </div>
+                    <div class="text-blue-500">🎯</div>
+                </div>
+                <div class="w-full bg-gray-200 rounded-full h-3 mb-2">
+                    <div class="token-progress h-3 rounded-full transition-all duration-300" id="token-bar" style="width: 16%"></div>
+                </div>
+                <p class="text-xs text-gray-500" id="token-percentage">16% used • 168k remaining</p>
+            </div>
+
+            <!-- Session Counter -->
+            <div class="session-card rounded-lg p-6 shadow-sm text-white">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <p class="text-sm opacity-90">Session Time</p>
+                        <p class="text-2xl font-bold" id="session-time">00:00:00</p>
+                    </div>
+                    <div class="text-2xl">⏱️</div>
+                </div>
+                <p class="text-xs opacity-75 mt-2" id="session-info">Active session</p>
+            </div>
+
+            <!-- Cost Tracking -->
+            <div class="cost-card rounded-lg p-6 shadow-sm text-white">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <p class="text-sm opacity-90">Estimated Cost</p>
+                        <p class="text-2xl font-bold" id="cost-estimate">$0.00</p>
+                    </div>
+                    <div class="text-2xl">💰</div>
+                </div>
+                <p class="text-xs opacity-75 mt-2" id="cost-info">Current session</p>
+            </div>
+
+            <!-- Agent Activity -->
+            <div class="metric-card rounded-lg p-6 shadow-sm text-white">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <p class="text-sm opacity-90">Agent Tasks</p>
+                        <p class="text-2xl font-bold" id="agent-tasks">0</p>
+                    </div>
+                    <div class="text-2xl">🤖</div>
+                </div>
+                <p class="text-xs opacity-75 mt-2" id="tasks-info">Total executed</p>
+            </div>
+        </div>
+
+        <!-- Real-Time Activity Feed -->
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+            <!-- Live Agent Activity -->
+            <div class="lg:col-span-2">
+                <div class="bg-white rounded-lg shadow-sm border">
+                    <div class="p-6 border-b">
+                        <div class="flex items-center justify-between">
+                            <h2 class="text-xl font-semibold text-gray-900">🔴 Live Agent Activity</h2>
+                            <div class="flex items-center space-x-2">
+                                <div class="w-2 h-2 bg-red-500 rounded-full status-active"></div>
+                                <span class="text-sm text-gray-600">Live</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="p-6">
+                        <div id="live-activity" class="space-y-3 max-h-96 overflow-y-auto">
+                            <div class="flex items-center space-x-3 text-sm text-gray-500">
+                                <div class="w-2 h-2 bg-gray-300 rounded-full"></div>
+                                <span class="text-xs text-gray-400">Monitoring Claude Code session...</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Token Usage Breakdown -->
+            <div class="space-y-6">
+                <!-- Current Context -->
+                <div class="bg-white rounded-lg shadow-sm border">
+                    <div class="p-6 border-b">
+                        <h3 class="text-lg font-semibold text-gray-900">📊 Context Breakdown</h3>
+                    </div>
+                    <div class="p-6">
+                        <div class="space-y-4">
+                            <div class="flex justify-between items-center">
+                                <span class="text-sm text-gray-600">System Prompt</span>
+                                <span class="text-sm font-medium" id="system-tokens">6.7k (3.3%)</span>
+                            </div>
+                            <div class="flex justify-between items-center">
+                                <span class="text-sm text-gray-600">System Tools</span>
+                                <span class="text-sm font-medium" id="tools-tokens">11.4k (5.7%)</span>
+                            </div>
+                            <div class="flex justify-between items-center">
+                                <span class="text-sm text-gray-600">MCP Tools</span>
+                                <span class="text-sm font-medium" id="mcp-tokens">9.6k (4.8%)</span>
+                            </div>
+                            <div class="flex justify-between items-center">
+                                <span class="text-sm text-gray-600">Memory Files</span>
+                                <span class="text-sm font-medium" id="memory-tokens">4.3k (2.2%)</span>
+                            </div>
+                            <div class="border-t pt-2">
+                                <div class="flex justify-between items-center font-medium">
+                                    <span class="text-gray-900">Free Space</span>
+                                    <span class="text-green-600" id="free-tokens">168k (84%)</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Agent Status -->
+                <div class="bg-white rounded-lg shadow-sm border">
+                    <div class="p-6 border-b">
+                        <h3 class="text-lg font-semibold text-gray-900">🤖 Agent Status</h3>
+                    </div>
+                    <div class="p-6">
+                        <div id="agent-status" class="space-y-3">
+                            <div class="flex items-center justify-between p-2 rounded bg-gray-50">
+                                <div class="flex items-center space-x-2">
+                                    <span class="text-sm">📈</span>
+                                    <span class="text-sm font-medium">ShadCN Optimization</span>
+                                </div>
+                                <span class="text-xs px-2 py-1 bg-green-100 text-green-600 rounded">Ready</span>
+                            </div>
+                            <div class="flex items-center justify-between p-2 rounded bg-gray-50">
+                                <div class="flex items-center space-x-2">
+                                    <span class="text-sm">🎨</span>
+                                    <span class="text-sm font-medium">Design System</span>
+                                </div>
+                                <span class="text-xs px-2 py-1 bg-green-100 text-green-600 rounded">Ready</span>
+                            </div>
+                            <div class="flex items-center justify-between p-2 rounded bg-gray-50">
+                                <div class="flex items-center space-x-2">
+                                    <span class="text-sm">🏗️</span>
+                                    <span class="text-sm font-medium">Component Architect</span>
+                                </div>
+                                <span class="text-xs px-2 py-1 bg-green-100 text-green-600 rounded">Ready</span>
+                            </div>
+                            <div class="flex items-center justify-between p-2 rounded bg-gray-50">
+                                <div class="flex items-center space-x-2">
+                                    <span class="text-sm">♿</span>
+                                    <span class="text-sm font-medium">Accessibility</span>
+                                </div>
+                                <span class="text-xs px-2 py-1 bg-green-100 text-green-600 rounded">Ready</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Claude Code Integration Status -->
+        <div class="mt-8 bg-white rounded-lg shadow-sm border">
+            <div class="p-6 border-b">
+                <h2 class="text-xl font-semibold text-gray-900">⚡ Claude Code Integration</h2>
+                <p class="text-sm text-gray-600 mt-1">Live monitoring of Claude Code session and events</p>
+            </div>
+            <div class="p-6">
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                    <div class="text-center">
+                        <div class="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-3">
+                            <span class="text-green-600 text-xl">✓</span>
+                        </div>
+                        <h4 class="font-medium text-gray-900">Connection Active</h4>
+                        <p class="text-sm text-gray-600 mt-1">Monitoring Claude Code session</p>
+                    </div>
+                    <div class="text-center">
+                        <div class="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-3">
+                            <span class="text-blue-600 text-xl">📊</span>
+                        </div>
+                        <h4 class="font-medium text-gray-900">Real-time Metrics</h4>
+                        <p class="text-sm text-gray-600 mt-1">Token usage and activity tracking</p>
+                    </div>
+                    <div class="text-center">
+                        <div class="w-12 h-12 bg-purple-100 rounded-full flex items-center justify-center mx-auto mb-3">
+                            <span class="text-purple-600 text-xl">🤖</span>
+                        </div>
+                        <h4 class="font-medium text-gray-900">Agent Coordination</h4>
+                        <p class="text-sm text-gray-600 mt-1">Multi-agent workflow monitoring</p>
+                    </div>
+                </div>
+                
+                <div class="mt-6 p-4 bg-blue-50 rounded-lg">
+                    <div class="flex items-start space-x-3">
+                        <div class="w-5 h-5 text-blue-500 mt-0.5">ℹ️</div>
+                        <div>
+                            <h5 class="font-medium text-blue-900">Integration Status</h5>
+                            <p class="text-sm text-blue-700 mt-1">
+                                Connected to Claude Code session. Monitoring token usage, agent activity, and file changes in real-time.
+                                Current session: <span class="font-mono">claude-sonnet-4-20250514</span>
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="claude-monitor.js"></script>
+</body>
+</html>

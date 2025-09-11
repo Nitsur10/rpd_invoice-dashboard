@@ -1,0 +1,22 @@
+title: Align UI with canonical snake_case fields and remove legacy references
+description: |
+  Update invoices UI to use snake_case fields from Supabase and remove legacy
+  camelCase references. Use computed status from due_date where needed.
+labels:
+  - agent/data-unification
+  - agent/shadcn
+  - phase/1
+assignees: []
+milestone: Phase 1 — Stabilize & Secure
+acceptanceCriteria:
+  - Columns/actions use `invoice_number` and `file_url` correctly.
+  - No references to `invoice.invoiceNumber`, `invoice_url`, or `payment_status` remain.
+  - Stats computed consistently via helpers (e.g., determinePaymentStatus).
+files:
+  - invoice-dashboard/src/components/invoices/columns.tsx
+  - invoice-dashboard/src/app/invoices/page.tsx
+steps:
+  - Replace legacy field references with canonical snake_case fields.
+  - Use determinePaymentStatus(due_date) consistently for status.
+  - Verify actions (copy/open) work with new fields.
+

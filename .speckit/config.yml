@@ -1,0 +1,29 @@
+# SpecKit configuration for Invoice Dashboard Refactor
+# Fill in the GitHub owner/repo to enable syncing specs -> issues
+
+version: 1
+
+project:
+  name: Invoice Dashboard Refactor
+  description: Unify data model, secure APIs, improve performance & a11y
+
+github:
+  owner: Nitsur10                # GitHub org/user
+  repo: rpd_invoice-dashboard    # GitHub repository name
+  project: Dashboard Refactor    # Optional: GitHub Project name
+
+sync:
+  specsPath: specs               # Root folder for SpecKit specs
+  direction: source_of_truth     # specs are the source of truth
+  createIssues: true
+  updateIssues: true
+  closeIssues: false
+  labelsFrom: labels             # Map labels from spec files
+  assigneesFrom: assignees       # Map assignees from spec files
+  milestoneFrom: milestone       # Map milestone from spec files
+
+defaults:
+  milestone: Phase 1 — Stabilize & Secure
+  labels:
+    - phase/1
+    - orchestrated

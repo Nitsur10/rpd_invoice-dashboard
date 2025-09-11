@@ -1,0 +1,246 @@
+@import "tailwindcss";
+
+@theme {
+  --default-font-family: var(--font-sans);
+  --default-mono-font-family: var(--font-mono);
+  
+  --radius: 0.5rem;
+}
+
+@layer theme {
+  :root {
+    /* RPD Brand Colors - High Contrast Light Theme Only */
+    --color-background: oklch(0.98 0.005 240);
+    --color-foreground: oklch(0.1 0.1 240);
+    --color-card: oklch(1 0 0);
+    --color-card-foreground: oklch(0.1 0.1 240);
+    --color-popover: oklch(1 0 0);
+    --color-popover-foreground: oklch(0.1 0.1 240);
+    --color-primary: oklch(0.25 0.08 240);
+    --color-primary-foreground: oklch(1 0 0);
+    --color-secondary: oklch(0.85 0.08 80);
+    --color-secondary-foreground: oklch(0.1 0.1 240);
+    --color-muted: oklch(0.93 0.01 240);
+    --color-muted-foreground: oklch(0.25 0.06 240);
+    --color-accent: oklch(0.65 0.12 80);
+    --color-accent-foreground: oklch(1 0 0);
+    --color-destructive: oklch(0.577 0.245 27.325);
+    --color-destructive-foreground: oklch(1 0 0);
+    --color-border: oklch(0.8 0.03 240);
+    --color-input: oklch(0.88 0.02 240);
+    --color-ring: oklch(0.25 0.08 240);
+    
+    /* Chart Colors */
+    --color-chart-1: oklch(0.25 0.08 240);
+    --color-chart-2: oklch(0.65 0.12 80);
+    --color-chart-3: oklch(0.55 0.15 140);
+    --color-chart-4: oklch(0.70 0.18 50);
+    --color-chart-5: oklch(0.60 0.20 20);
+    
+    /* Sidebar Colors - High Contrast */
+    --color-sidebar: oklch(0.99 0.005 240);
+    --color-sidebar-foreground: oklch(0.1 0.1 240);
+    --color-sidebar-primary: oklch(0.25 0.08 240);
+    --color-sidebar-primary-foreground: oklch(1 0 0);
+    --color-sidebar-accent: oklch(0.65 0.12 80);
+    --color-sidebar-accent-foreground: oklch(1 0 0);
+    --color-sidebar-border: oklch(0.8 0.03 240);
+    --color-sidebar-ring: oklch(0.25 0.08 240);
+  }
+
+  /* Dark theme removed - focusing on light mode only for maximum clarity */
+}
+
+@layer base {
+  * {
+    border-color: oklch(var(--color-border));
+    outline-color: oklch(var(--color-ring) / 0.5);
+  }
+  body {
+    color: oklch(var(--color-foreground));
+  }
+  
+  /* Clean Light Mode Background Only */
+  .dashboard-bg {
+    background: oklch(0.96 0.01 240);
+    background-image: 
+      linear-gradient(135deg, oklch(0.96 0.01 240) 0%, oklch(0.94 0.015 240) 100%);
+  }
+}
+
+@layer components {
+  /* High Contrast Card Design - Light Mode Only */
+  .glass-card {
+    background: oklch(1 0 0 / 0.98);
+    border: 1px solid oklch(0.75 0.04 240);
+    box-shadow: 
+      0 4px 16px oklch(0.25 0.08 240 / 0.15),
+      0 1px 0 oklch(1 0 0) inset;
+    backdrop-filter: blur(6px);
+    @apply transition-all duration-300 ease-out;
+  }
+  
+  .glass-card-hover {
+    @apply hover:shadow-[0_8px_24px_oklch(0.25_0.08_240/0.2)];
+    @apply hover:scale-[1.02] hover:-translate-y-1 transition-all duration-300 ease-out;
+  }
+  
+  .glass-sidebar {
+    background: oklch(1 0 0 / 0.98);
+    border-right: 1px solid oklch(0.75 0.04 240);
+    box-shadow: 
+      2px 0 16px oklch(0.25 0.08 240 / 0.1),
+      1px 0 0 oklch(1 0 0) inset;
+    backdrop-filter: blur(8px);
+  }
+  
+  .glass-header {
+    background: oklch(1 0 0 / 0.95);
+    border-bottom: 1px solid oklch(0.75 0.04 240);
+    box-shadow: 
+      0 2px 8px oklch(0.25 0.08 240 / 0.08),
+      0 1px 0 oklch(1 0 0) inset;
+    backdrop-filter: blur(8px);
+  }
+
+  /* Animated Gradients */
+  .animated-gradient {
+    background: linear-gradient(-45deg, 
+      oklch(var(--color-primary) / 0.1), 
+      oklch(var(--color-accent) / 0.1), 
+      oklch(var(--color-primary) / 0.05), 
+      oklch(var(--color-accent) / 0.05));
+    background-size: 400% 400%;
+    animation: gradientShift 8s ease infinite;
+  }
+  
+  @keyframes gradientShift {
+    0% { background-position: 0% 50%; }
+    50% { background-position: 100% 50%; }
+    100% { background-position: 0% 50%; }
+  }
+
+  /* Enhanced Button Animations */
+  .button-premium {
+    @apply relative overflow-hidden;
+    background: linear-gradient(to right, oklch(var(--color-primary)), oklch(var(--color-accent)));
+    box-shadow: 0 4px 6px -1px oklch(var(--color-primary) / 0.25);
+    @apply transition-all duration-300 ease-out;
+    @apply hover:scale-105 hover:-translate-y-0.5;
+  }
+  
+  .button-premium:hover {
+    box-shadow: 0 10px 15px -3px oklch(var(--color-primary) / 0.35);
+  }
+  
+  .button-premium::before {
+    content: '';
+    @apply absolute inset-0;
+    background: linear-gradient(to right, transparent, rgba(255, 255, 255, 0.2), transparent);
+    transform: translateX(-100%);
+    @apply transition-transform duration-700;
+  }
+  
+  .button-premium:hover::before {
+    transform: translateX(100%);
+  }
+
+  /* GPU-Accelerated Floating Animation */
+  .floating {
+    animation: floating 3s ease-in-out infinite;
+    will-change: transform;
+  }
+  
+  @keyframes floating {
+    0%, 100% { 
+      transform: translate3d(0, 0, 0) rotate(0deg);
+      animation-timing-function: ease-in-out;
+    }
+    33% { 
+      transform: translate3d(0, -8px, 0) rotate(1deg); 
+    }
+    66% { 
+      transform: translate3d(0, 4px, 0) rotate(-1deg); 
+    }
+  }
+
+  /* Pulse Effect */
+  .pulse-glow {
+    animation: pulseGlow 2s ease-in-out infinite alternate;
+  }
+  
+  @keyframes pulseGlow {
+    from {
+      box-shadow: 0 0 20px oklch(var(--color-accent) / 0.3);
+    }
+    to {
+      box-shadow: 0 0 30px oklch(var(--color-accent) / 0.6), 0 0 40px oklch(var(--color-accent) / 0.3);
+    }
+  }
+
+  /* Enhanced Focus States */
+  .focus-enhanced:focus-visible {
+    outline: none;
+    box-shadow: 0 0 0 4px oklch(var(--color-primary) / 0.2);
+    border-color: oklch(var(--color-primary));
+    box-shadow: 0 4px 6px -1px oklch(var(--color-primary) / 0.25), 0 0 0 4px oklch(var(--color-primary) / 0.2);
+    @apply transition-all duration-200 ease-out;
+  }
+
+  /* Smooth Theme Transitions */
+  .theme-transition {
+    @apply transition-colors duration-500 ease-in-out;
+  }
+  
+  .theme-transition * {
+    @apply transition-colors duration-500 ease-in-out;
+  }
+}
+
+/* React DatePicker Styling */
+.react-datepicker {
+  @apply bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg shadow-lg;
+}
+
+.react-datepicker__header {
+  @apply bg-slate-50 dark:bg-slate-700 border-b border-slate-200 dark:border-slate-600;
+}
+
+.react-datepicker__current-month,
+.react-datepicker-time__header,
+.react-datepicker-year-header {
+  @apply text-slate-900 dark:text-slate-100 font-medium;
+}
+
+.react-datepicker__day-name,
+.react-datepicker__day,
+.react-datepicker__time-name {
+  @apply text-slate-700 dark:text-slate-300;
+}
+
+.react-datepicker__day:hover,
+.react-datepicker__month-text:hover,
+.react-datepicker__quarter-text:hover,
+.react-datepicker__year-text:hover {
+  @apply bg-slate-100 dark:bg-slate-600;
+}
+
+.react-datepicker__day--selected,
+.react-datepicker__day--in-selecting-range,
+.react-datepicker__day--in-range,
+.react-datepicker__month-text--selected,
+.react-datepicker__quarter-text--selected,
+.react-datepicker__year-text--selected {
+  @apply bg-blue-600 text-white;
+}
+
+.react-datepicker__day--keyboard-selected,
+.react-datepicker__month-text--keyboard-selected,
+.react-datepicker__quarter-text--keyboard-selected,
+.react-datepicker__year-text--keyboard-selected {
+  @apply bg-blue-500 text-white;
+}
+
+.react-datepicker__day--outside-month {
+  @apply text-slate-400 dark:text-slate-600;
+}

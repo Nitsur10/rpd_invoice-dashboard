@@ -1,0 +1,479 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🎯 Agent Development Monitor</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.js"></script>
+    <style>
+        body { font-family: 'Inter', system-ui, sans-serif; }
+        .agent-card { transition: all 0.3s ease; }
+        .agent-card:hover { transform: translateY(-2px); box-shadow: 0 8px 25px rgba(0,0,0,0.1); }
+        .progress-bar { background: linear-gradient(90deg, #3b82f6 0%, #1d4ed8 100%); }
+        .status-active { animation: pulse 2s infinite; }
+        @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.7; } }
+        .performance-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 1rem; }
+    </style>
+</head>
+<body class="bg-gray-50">
+    <div class="min-h-screen p-6">
+        <!-- Header -->
+        <div class="mb-8 text-center">
+            <h1 class="text-4xl font-bold text-gray-900 mb-2">🎯 Agent Development Monitor</h1>
+            <p class="text-gray-600 mb-4">Real-time agent performance tracking for development workflows</p>
+            <div class="flex justify-center items-center space-x-6 text-sm">
+                <div class="flex items-center space-x-2">
+                    <div class="w-3 h-3 bg-green-500 rounded-full"></div>
+                    <span>System Online</span>
+                </div>
+                <div class="flex items-center space-x-2">
+                    <div class="w-3 h-3 bg-blue-500 rounded-full status-active"></div>
+                    <span>8 Agents Active</span>
+                </div>
+                <div class="flex items-center space-x-2">
+                    <div class="w-3 h-3 bg-yellow-500 rounded-full"></div>
+                    <span id="active-workflows">0 Active Workflows</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Quick Stats -->
+        <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+            <div class="bg-white rounded-lg p-6 shadow-sm border">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <p class="text-sm text-gray-600">Total Tasks</p>
+                        <p class="text-2xl font-bold text-gray-900" id="total-tasks">0</p>
+                    </div>
+                    <div class="text-blue-500">📊</div>
+                </div>
+            </div>
+            <div class="bg-white rounded-lg p-6 shadow-sm border">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <p class="text-sm text-gray-600">Completed</p>
+                        <p class="text-2xl font-bold text-green-600" id="completed-tasks">0</p>
+                    </div>
+                    <div class="text-green-500">✅</div>
+                </div>
+            </div>
+            <div class="bg-white rounded-lg p-6 shadow-sm border">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <p class="text-sm text-gray-600">In Progress</p>
+                        <p class="text-2xl font-bold text-blue-600" id="active-tasks">0</p>
+                    </div>
+                    <div class="text-blue-500">⚡</div>
+                </div>
+            </div>
+            <div class="bg-white rounded-lg p-6 shadow-sm border">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <p class="text-sm text-gray-600">Avg Time</p>
+                        <p class="text-2xl font-bold text-purple-600" id="avg-time">0min</p>
+                    </div>
+                    <div class="text-purple-500">⏱️</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Agent Performance Grid -->
+        <div class="performance-grid mb-8">
+            <!-- ShadCN Optimization Agent -->
+            <div class="agent-card bg-white rounded-lg p-6 shadow-sm border" data-agent="shadcn-optimization">
+                <div class="flex items-center justify-between mb-4">
+                    <div class="flex items-center space-x-3">
+                        <div class="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center">
+                            <span class="text-xl">📈</span>
+                        </div>
+                        <div>
+                            <h3 class="font-semibold text-gray-900">ShadCN Optimization</h3>
+                            <p class="text-sm text-gray-600">Performance & Bundle Optimization</p>
+                        </div>
+                    </div>
+                    <div class="text-right">
+                        <div class="agent-status text-sm font-medium" data-status="idle">IDLE</div>
+                        <div class="text-xs text-gray-500">Last: 2min ago</div>
+                    </div>
+                </div>
+                
+                <div class="space-y-3">
+                    <div class="current-task text-sm text-gray-700" style="display: none;">
+                        <span class="font-medium">Current:</span> <span class="task-description">Waiting for tasks...</span>
+                    </div>
+                    
+                    <div class="progress-container" style="display: none;">
+                        <div class="flex justify-between text-xs text-gray-600 mb-1">
+                            <span>Progress</span>
+                            <span class="progress-percentage">0%</span>
+                        </div>
+                        <div class="w-full bg-gray-200 rounded-full h-2">
+                            <div class="progress-bar h-2 rounded-full transition-all duration-300" style="width: 0%"></div>
+                        </div>
+                    </div>
+                    
+                    <div class="grid grid-cols-2 gap-4 text-sm">
+                        <div>
+                            <div class="text-gray-600">Tasks Completed</div>
+                            <div class="font-semibold tasks-completed">0</div>
+                        </div>
+                        <div>
+                            <div class="text-gray-600">Avg Duration</div>
+                            <div class="font-semibold avg-duration">5min</div>
+                        </div>
+                    </div>
+                    
+                    <div class="recent-outputs bg-gray-50 rounded p-3 text-xs">
+                        <div class="font-medium text-gray-700 mb-1">Recent Outputs:</div>
+                        <div class="outputs-list text-gray-600">No recent outputs</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Design System Agent -->
+            <div class="agent-card bg-white rounded-lg p-6 shadow-sm border" data-agent="design-system">
+                <div class="flex items-center justify-between mb-4">
+                    <div class="flex items-center space-x-3">
+                        <div class="w-10 h-10 bg-pink-100 rounded-lg flex items-center justify-center">
+                            <span class="text-xl">🎨</span>
+                        </div>
+                        <div>
+                            <h3 class="font-semibold text-gray-900">Design System</h3>
+                            <p class="text-sm text-gray-600">Brand Consistency & Tokens</p>
+                        </div>
+                    </div>
+                    <div class="text-right">
+                        <div class="agent-status text-sm font-medium" data-status="idle">IDLE</div>
+                        <div class="text-xs text-gray-500">Last: 5min ago</div>
+                    </div>
+                </div>
+                
+                <div class="space-y-3">
+                    <div class="current-task text-sm text-gray-700" style="display: none;">
+                        <span class="font-medium">Current:</span> <span class="task-description">Waiting for tasks...</span>
+                    </div>
+                    
+                    <div class="progress-container" style="display: none;">
+                        <div class="flex justify-between text-xs text-gray-600 mb-1">
+                            <span>Progress</span>
+                            <span class="progress-percentage">0%</span>
+                        </div>
+                        <div class="w-full bg-gray-200 rounded-full h-2">
+                            <div class="progress-bar h-2 rounded-full transition-all duration-300" style="width: 0%"></div>
+                        </div>
+                    </div>
+                    
+                    <div class="grid grid-cols-2 gap-4 text-sm">
+                        <div>
+                            <div class="text-gray-600">Tasks Completed</div>
+                            <div class="font-semibold tasks-completed">0</div>
+                        </div>
+                        <div>
+                            <div class="text-gray-600">Avg Duration</div>
+                            <div class="font-semibold avg-duration">3min</div>
+                        </div>
+                    </div>
+                    
+                    <div class="recent-outputs bg-gray-50 rounded p-3 text-xs">
+                        <div class="font-medium text-gray-700 mb-1">Recent Outputs:</div>
+                        <div class="outputs-list text-gray-600">No recent outputs</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Component Architect Agent -->
+            <div class="agent-card bg-white rounded-lg p-6 shadow-sm border" data-agent="component-architect">
+                <div class="flex items-center justify-between mb-4">
+                    <div class="flex items-center space-x-3">
+                        <div class="w-10 h-10 bg-orange-100 rounded-lg flex items-center justify-center">
+                            <span class="text-xl">🏗️</span>
+                        </div>
+                        <div>
+                            <h3 class="font-semibold text-gray-900">Component Architect</h3>
+                            <p class="text-sm text-gray-600">Architecture & Patterns</p>
+                        </div>
+                    </div>
+                    <div class="text-right">
+                        <div class="agent-status text-sm font-medium" data-status="idle">IDLE</div>
+                        <div class="text-xs text-gray-500">Last: 1min ago</div>
+                    </div>
+                </div>
+                
+                <div class="space-y-3">
+                    <div class="current-task text-sm text-gray-700" style="display: none;">
+                        <span class="font-medium">Current:</span> <span class="task-description">Waiting for tasks...</span>
+                    </div>
+                    
+                    <div class="progress-container" style="display: none;">
+                        <div class="flex justify-between text-xs text-gray-600 mb-1">
+                            <span>Progress</span>
+                            <span class="progress-percentage">0%</span>
+                        </div>
+                        <div class="w-full bg-gray-200 rounded-full h-2">
+                            <div class="progress-bar h-2 rounded-full transition-all duration-300" style="width: 0%"></div>
+                        </div>
+                    </div>
+                    
+                    <div class="grid grid-cols-2 gap-4 text-sm">
+                        <div>
+                            <div class="text-gray-600">Tasks Completed</div>
+                            <div class="font-semibold tasks-completed">0</div>
+                        </div>
+                        <div>
+                            <div class="text-gray-600">Avg Duration</div>
+                            <div class="font-semibold avg-duration">4min</div>
+                        </div>
+                    </div>
+                    
+                    <div class="recent-outputs bg-gray-50 rounded p-3 text-xs">
+                        <div class="font-medium text-gray-700 mb-1">Recent Outputs:</div>
+                        <div class="outputs-list text-gray-600">No recent outputs</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Accessibility Agent -->
+            <div class="agent-card bg-white rounded-lg p-6 shadow-sm border" data-agent="accessibility">
+                <div class="flex items-center justify-between mb-4">
+                    <div class="flex items-center space-x-3">
+                        <div class="w-10 h-10 bg-green-100 rounded-lg flex items-center justify-center">
+                            <span class="text-xl">♿</span>
+                        </div>
+                        <div>
+                            <h3 class="font-semibold text-gray-900">Accessibility</h3>
+                            <p class="text-sm text-gray-600">WCAG Compliance & A11y</p>
+                        </div>
+                    </div>
+                    <div class="text-right">
+                        <div class="agent-status text-sm font-medium" data-status="idle">IDLE</div>
+                        <div class="text-xs text-gray-500">Last: 3min ago</div>
+                    </div>
+                </div>
+                
+                <div class="space-y-3">
+                    <div class="current-task text-sm text-gray-700" style="display: none;">
+                        <span class="font-medium">Current:</span> <span class="task-description">Waiting for tasks...</span>
+                    </div>
+                    
+                    <div class="progress-container" style="display: none;">
+                        <div class="flex justify-between text-xs text-gray-600 mb-1">
+                            <span>Progress</span>
+                            <span class="progress-percentage">0%</span>
+                        </div>
+                        <div class="w-full bg-gray-200 rounded-full h-2">
+                            <div class="progress-bar h-2 rounded-full transition-all duration-300" style="width: 0%"></div>
+                        </div>
+                    </div>
+                    
+                    <div class="grid grid-cols-2 gap-4 text-sm">
+                        <div>
+                            <div class="text-gray-600">Tasks Completed</div>
+                            <div class="font-semibold tasks-completed">0</div>
+                        </div>
+                        <div>
+                            <div class="text-gray-600">Avg Duration</div>
+                            <div class="font-semibold avg-duration">3min</div>
+                        </div>
+                    </div>
+                    
+                    <div class="recent-outputs bg-gray-50 rounded p-3 text-xs">
+                        <div class="font-medium text-gray-700 mb-1">Recent Outputs:</div>
+                        <div class="outputs-list text-gray-600">No recent outputs</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Testing Orchestrator Agent -->
+            <div class="agent-card bg-white rounded-lg p-6 shadow-sm border" data-agent="testing-orchestrator">
+                <div class="flex items-center justify-between mb-4">
+                    <div class="flex items-center space-x-3">
+                        <div class="w-10 h-10 bg-purple-100 rounded-lg flex items-center justify-center">
+                            <span class="text-xl">🧪</span>
+                        </div>
+                        <div>
+                            <h3 class="font-semibold text-gray-900">Testing Orchestrator</h3>
+                            <p class="text-sm text-gray-600">Test Strategy & QA</p>
+                        </div>
+                    </div>
+                    <div class="text-right">
+                        <div class="agent-status text-sm font-medium" data-status="idle">IDLE</div>
+                        <div class="text-xs text-gray-500">Last: 4min ago</div>
+                    </div>
+                </div>
+                
+                <div class="space-y-3">
+                    <div class="current-task text-sm text-gray-700" style="display: none;">
+                        <span class="font-medium">Current:</span> <span class="task-description">Waiting for tasks...</span>
+                    </div>
+                    
+                    <div class="progress-container" style="display: none;">
+                        <div class="flex justify-between text-xs text-gray-600 mb-1">
+                            <span>Progress</span>
+                            <span class="progress-percentage">0%</span>
+                        </div>
+                        <div class="w-full bg-gray-200 rounded-full h-2">
+                            <div class="progress-bar h-2 rounded-full transition-all duration-300" style="width: 0%"></div>
+                        </div>
+                    </div>
+                    
+                    <div class="grid grid-cols-2 gap-4 text-sm">
+                        <div>
+                            <div class="text-gray-600">Tasks Completed</div>
+                            <div class="font-semibold tasks-completed">0</div>
+                        </div>
+                        <div>
+                            <div class="text-gray-600">Avg Duration</div>
+                            <div class="font-semibold avg-duration">4min</div>
+                        </div>
+                    </div>
+                    
+                    <div class="recent-outputs bg-gray-50 rounded p-3 text-xs">
+                        <div class="font-medium text-gray-700 mb-1">Recent Outputs:</div>
+                        <div class="outputs-list text-gray-600">No recent outputs</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Documentation Agent -->
+            <div class="agent-card bg-white rounded-lg p-6 shadow-sm border" data-agent="documentation">
+                <div class="flex items-center justify-between mb-4">
+                    <div class="flex items-center space-x-3">
+                        <div class="w-10 h-10 bg-indigo-100 rounded-lg flex items-center justify-center">
+                            <span class="text-xl">📚</span>
+                        </div>
+                        <div>
+                            <h3 class="font-semibold text-gray-900">Documentation</h3>
+                            <p class="text-sm text-gray-600">Auto-docs & Knowledge</p>
+                        </div>
+                    </div>
+                    <div class="text-right">
+                        <div class="agent-status text-sm font-medium" data-status="idle">IDLE</div>
+                        <div class="text-xs text-gray-500">Last: 6min ago</div>
+                    </div>
+                </div>
+                
+                <div class="space-y-3">
+                    <div class="current-task text-sm text-gray-700" style="display: none;">
+                        <span class="font-medium">Current:</span> <span class="task-description">Waiting for tasks...</span>
+                    </div>
+                    
+                    <div class="progress-container" style="display: none;">
+                        <div class="flex justify-between text-xs text-gray-600 mb-1">
+                            <span>Progress</span>
+                            <span class="progress-percentage">0%</span>
+                        </div>
+                        <div class="w-full bg-gray-200 rounded-full h-2">
+                            <div class="progress-bar h-2 rounded-full transition-all duration-300" style="width: 0%"></div>
+                        </div>
+                    </div>
+                    
+                    <div class="grid grid-cols-2 gap-4 text-sm">
+                        <div>
+                            <div class="text-gray-600">Tasks Completed</div>
+                            <div class="font-semibold tasks-completed">0</div>
+                        </div>
+                        <div>
+                            <div class="text-gray-600">Avg Duration</div>
+                            <div class="font-semibold avg-duration">2min</div>
+                        </div>
+                    </div>
+                    
+                    <div class="recent-outputs bg-gray-50 rounded p-3 text-xs">
+                        <div class="font-medium text-gray-700 mb-1">Recent Outputs:</div>
+                        <div class="outputs-list text-gray-600">No recent outputs</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Deployment Agent -->
+            <div class="agent-card bg-white rounded-lg p-6 shadow-sm border" data-agent="deployment">
+                <div class="flex items-center justify-between mb-4">
+                    <div class="flex items-center space-x-3">
+                        <div class="w-10 h-10 bg-red-100 rounded-lg flex items-center justify-center">
+                            <span class="text-xl">🚀</span>
+                        </div>
+                        <div>
+                            <h3 class="font-semibold text-gray-900">Deployment</h3>
+                            <p class="text-sm text-gray-600">CI/CD & Infrastructure</p>
+                        </div>
+                    </div>
+                    <div class="text-right">
+                        <div class="agent-status text-sm font-medium" data-status="idle">IDLE</div>
+                        <div class="text-xs text-gray-500">Last: 7min ago</div>
+                    </div>
+                </div>
+                
+                <div class="space-y-3">
+                    <div class="current-task text-sm text-gray-700" style="display: none;">
+                        <span class="font-medium">Current:</span> <span class="task-description">Waiting for tasks...</span>
+                    </div>
+                    
+                    <div class="progress-container" style="display: none;">
+                        <div class="flex justify-between text-xs text-gray-600 mb-1">
+                            <span>Progress</span>
+                            <span class="progress-percentage">0%</span>
+                        </div>
+                        <div class="w-full bg-gray-200 rounded-full h-2">
+                            <div class="progress-bar h-2 rounded-full transition-all duration-300" style="width: 0%"></div>
+                        </div>
+                    </div>
+                    
+                    <div class="grid grid-cols-2 gap-4 text-sm">
+                        <div>
+                            <div class="text-gray-600">Tasks Completed</div>
+                            <div class="font-semibold tasks-completed">0</div>
+                        </div>
+                        <div>
+                            <div class="text-gray-600">Avg Duration</div>
+                            <div class="font-semibold avg-duration">3min</div>
+                        </div>
+                    </div>
+                    
+                    <div class="recent-outputs bg-gray-50 rounded p-3 text-xs">
+                        <div class="font-medium text-gray-700 mb-1">Recent Outputs:</div>
+                        <div class="outputs-list text-gray-600">No recent outputs</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Activity Log -->
+        <div class="bg-white rounded-lg shadow-sm border">
+            <div class="p-6 border-b">
+                <h2 class="text-xl font-semibold text-gray-900">📋 Activity Log</h2>
+                <p class="text-sm text-gray-600">Real-time agent activity and task execution history</p>
+            </div>
+            <div class="p-6">
+                <div id="activity-log" class="space-y-3 max-h-64 overflow-y-auto">
+                    <div class="flex items-center space-x-3 text-sm text-gray-500">
+                        <div class="w-2 h-2 bg-gray-300 rounded-full"></div>
+                        <span class="text-xs text-gray-400">System initialized - Waiting for agent activity...</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Controls -->
+        <div class="mt-8 bg-white rounded-lg shadow-sm border p-6">
+            <h2 class="text-xl font-semibold text-gray-900 mb-4">🎮 Development Controls</h2>
+            <div class="flex flex-wrap gap-4">
+                <button onclick="simulateAgentWork()" class="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors">
+                    ▶️ Simulate Agent Activity
+                </button>
+                <button onclick="clearLogs()" class="bg-gray-600 text-white px-4 py-2 rounded-lg hover:bg-gray-700 transition-colors">
+                    🗑️ Clear Logs
+                </button>
+                <button onclick="exportMetrics()" class="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 transition-colors">
+                    📊 Export Metrics
+                </button>
+                <button onclick="toggleAutoRefresh()" class="bg-purple-600 text-white px-4 py-2 rounded-lg hover:bg-purple-700 transition-colors">
+                    🔄 Auto Refresh: ON
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script src="monitor.js"></script>
+</body>
+</html>

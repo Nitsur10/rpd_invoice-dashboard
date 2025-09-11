@@ -1,0 +1,22 @@
+title: Add contract tests for invoices and stats APIs
+description: |
+  Implement integration tests to verify filtering, sorting, pagination, and error
+  handling for /api/invoices and /api/stats. Establish a baseline for CI quality gates.
+labels:
+  - agent/testing
+  - phase/1
+assignees: []
+milestone: Phase 1 — Stabilize & Secure
+acceptanceCriteria:
+  - Tests cover happy-path and invalid inputs (bad sortBy, oversized limit, bad dates).
+  - CI runs tests on PRs; coverage meets baseline for touched files.
+  - Test data or mocks ensure deterministic results.
+files:
+  - invoice-dashboard/jest.config.js
+  - invoice-dashboard/tests/api/invoices.test.ts
+  - invoice-dashboard/tests/api/stats.test.ts
+steps:
+  - Add/extend integration tests for /api/invoices and /api/stats.
+  - Seed minimal test data or mock Supabase calls as needed.
+  - Wire test job in CI workflow (separate PR optional).
+

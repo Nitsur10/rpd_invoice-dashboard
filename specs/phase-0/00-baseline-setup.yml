@@ -1,0 +1,30 @@
+title: Phase 0 — Baseline Setup
+description: |
+  Establish a clean baseline of the current codebase and repository settings
+  before starting Phase 1. Create a baseline branch and tag, protect main,
+  configure GitHub Project and labels, set secrets, and verify SpecKit sync.
+labels:
+  - agent/orchestrator
+  - phase/0
+assignees: []
+milestone: Phase 0 — Baseline Setup
+acceptanceCriteria:
+  - Baseline branch `baseline/current` pushed and annotated tag `baseline-YYYYMMDD` exists.
+  - `main` is protected with required PR checks (type-check/tests once CI is added).
+  - GitHub Project "Dashboard Refactor" created and visible in repo.
+  - Labels created: agent/*, phase/*, orchestrated.
+  - GitHub Actions secrets present: NEXT_PUBLIC_SUPABASE_URL, NEXT_PUBLIC_SUPABASE_ANON_KEY, SUPABASE_SERVICE_ROLE_KEY.
+  - SpecKit synced: Phase 1 specs created as GitHub Issues under the project.
+  - `.speckit/config.yml` points to `Nitsur10/rpd_invoice-dashboard`.
+files:
+  - .speckit/config.yml
+  - specs/phase-1/*.yml
+steps:
+  - Create baseline branch and tag: `git checkout -b baseline/current`; commit snapshot; `git tag -a baseline-YYYYMMDD -m "Baseline before Phase 1"`; push branch and tags.
+  - Protect `main` in GitHub settings (require PRs and status checks; allow admins override optional).
+  - Create GitHub Project "Dashboard Refactor" and add it to `.speckit/config.yml` if desired.
+  - Create labels used by specs: `agent/backend-api`, `agent/migration`, `agent/data-unification`, `agent/observability`, `agent/shadcn`, `agent/a11y`, `agent/testing`, `agent/docs`, `agent/deployment`, `agent/orchestrator`, `phase/0`, `phase/1`, `orchestrated`.
+  - Add required secrets in GitHub → Settings → Secrets → Actions: `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`, `SUPABASE_SERVICE_ROLE_KEY`.
+  - Push current `.speckit/config.yml` and Phase 1 specs; run `speckit sync` or rely on the SpecKit Action to create issues.
+  - Verify issues appear in GitHub and are mapped to the "Dashboard Refactor" project with correct labels.
+

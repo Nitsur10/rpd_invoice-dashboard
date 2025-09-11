@@ -1,0 +1,23 @@
+title: Move Supabase admin client to server-only module
+description: |
+  Create server-only Supabase admin client in src/lib/server/supabase-admin.ts with
+  `import 'server-only'`. Ensure API routes import from this module and no client
+  component can import the admin client.
+labels:
+  - agent/backend-api
+  - phase/1
+assignees: []
+milestone: Phase 1 — Stabilize & Secure
+acceptanceCriteria:
+  - No client bundles include SUPABASE_SERVICE_ROLE_KEY.
+  - API routes import admin client from lib/server/supabase-admin.
+  - Lint/static rule or path segregation prevents client imports.
+files:
+  - invoice-dashboard/src/lib/supabase.ts
+  - invoice-dashboard/src/lib/server/supabase-admin.ts
+  - invoice-dashboard/src/app/api/**
+steps:
+  - Create server-only module exporting supabaseAdmin client.
+  - Update /api/* route imports to use server-only module.
+  - Add comment and (optional) lint rule to block client import.
+

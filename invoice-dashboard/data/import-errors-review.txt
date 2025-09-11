@@ -1,0 +1,31 @@
+IMPORT ERROR RECORDS FOR REVIEW - 9/11/2025, 1:57:21 PM
+=====================================
+
+Total Error Records: 2
+
+ERROR SUMMARY:
+• Missing required field: invoice_number: 2 records
+
+DETAILED RECORDS:
+
+1. Tab: "Taxcellent Non Xero" | Row: 6
+   Error: Missing required field: invoice_number
+   Data: {
+  "file_name": "RS Developments Pty Ltd -Payment Slip.pdf",
+  "file_url": "https://rudraprojects-my.sharepoint.com/personal/satyagala_rudraprojects_onmicrosoft_com/Documents/Invoice_Attachments/2025...
+
+
+2. Tab: "Taxcellent Non Xero" | Row: 7
+   Error: Missing required field: invoice_number
+   Data: {
+  "file_name": "RS Developments Pty Ltd - ICA Statement.pdf",
+  "file_url": "https://rudraprojects-my.sharepoint.com/personal/satyagala_rudraprojects_onmicrosoft_com/Documents/Invoice_Attachments/20...
+
+
+ACTION REQUIRED:
+[ ] Review each error record above
+[ ] Decide on correction approach  
+[ ] Update source spreadsheet if needed
+[ ] Re-run import after corrections
+
+Full detailed records available in: import-errors-2025-09-11T03-57-21-380Z.json

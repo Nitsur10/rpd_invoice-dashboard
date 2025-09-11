@@ -1,0 +1,463 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Individual Claude Agents - Real-Time Monitor</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui;
+            background: linear-gradient(135deg, #1e1e2e 0%, #2d2d44 100%);
+            color: #ffffff;
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+            padding: 30px;
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            border-radius: 20px;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .header h1 {
+            font-size: 2.5rem;
+            font-weight: 700;
+            margin-bottom: 10px;
+            background: linear-gradient(135deg, #3b82f6, #10b981);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .header p {
+            opacity: 0.8;
+            font-size: 1.1rem;
+        }
+
+        .agents-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+            gap: 25px;
+            margin-bottom: 30px;
+        }
+
+        .agent-card {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            border-radius: 20px;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            padding: 25px;
+            position: relative;
+            overflow: hidden;
+            transition: all 0.3s ease;
+        }
+
+        .agent-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
+            border-color: rgba(59, 130, 246, 0.5);
+        }
+
+        .agent-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 20px;
+        }
+
+        .agent-info {
+            flex: 1;
+        }
+
+        .agent-name {
+            font-size: 1.3rem;
+            font-weight: 600;
+            margin-bottom: 5px;
+        }
+
+        .agent-specialty {
+            opacity: 0.7;
+            font-size: 0.9rem;
+        }
+
+        .agent-icon {
+            font-size: 2rem;
+            margin-right: 15px;
+        }
+
+        .agent-status {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 0.8rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .status-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            animation: pulse 2s infinite;
+        }
+
+        .agent-metrics {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+
+        .metric {
+            text-align: center;
+            padding: 15px;
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 12px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .metric-label {
+            display: block;
+            font-size: 0.8rem;
+            opacity: 0.7;
+            margin-bottom: 5px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .metric-value {
+            font-size: 1.2rem;
+            font-weight: 700;
+            color: #10b981;
+        }
+
+        .current-work {
+            background: rgba(0, 0, 0, 0.2);
+            border-radius: 12px;
+            padding: 15px;
+            margin-bottom: 15px;
+            border-left: 4px solid #3b82f6;
+        }
+
+        .work-label {
+            font-size: 0.8rem;
+            opacity: 0.7;
+            margin-bottom: 8px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .work-description {
+            font-weight: 500;
+            line-height: 1.4;
+        }
+
+        .token-info {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: rgba(59, 130, 246, 0.1);
+            border-radius: 12px;
+            padding: 12px 15px;
+            border: 1px solid rgba(59, 130, 246, 0.3);
+        }
+
+        .token-amount {
+            font-weight: 600;
+            font-size: 1.1rem;
+        }
+
+        .token-cost {
+            font-size: 0.9rem;
+            opacity: 0.8;
+        }
+
+        .last-activity {
+            text-align: center;
+            font-size: 0.8rem;
+            opacity: 0.6;
+            margin-top: 15px;
+        }
+
+        .summary-panel {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            border-radius: 20px;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            padding: 25px;
+            margin-bottom: 20px;
+        }
+
+        .summary-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+        }
+
+        .summary-item {
+            text-align: center;
+        }
+
+        .summary-value {
+            font-size: 2rem;
+            font-weight: 700;
+            margin-bottom: 5px;
+            background: linear-gradient(135deg, #3b82f6, #10b981);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .summary-label {
+            opacity: 0.7;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            font-size: 0.9rem;
+        }
+
+        @keyframes pulse {
+            0% { opacity: 1; transform: scale(1); }
+            50% { opacity: 0.5; transform: scale(1.2); }
+            100% { opacity: 1; transform: scale(1); }
+        }
+
+        .active .status-dot { background-color: #10b981; }
+        .coordinating .status-dot { background-color: #3b82f6; }
+        .ready .status-dot { background-color: #f59e0b; }
+        .idle .status-dot { background-color: #6b7280; }
+
+        .loading {
+            text-align: center;
+            padding: 40px;
+            opacity: 0.6;
+        }
+
+        .refresh-indicator {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: rgba(59, 130, 246, 0.9);
+            color: white;
+            padding: 10px 15px;
+            border-radius: 25px;
+            font-size: 0.8rem;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+
+        .refresh-indicator.show {
+            opacity: 1;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🎯 Individual Claude Agents</h1>
+            <p>Real-time monitoring of individual agent work, token usage, and performance</p>
+        </div>
+
+        <div class="summary-panel">
+            <div class="summary-grid">
+                <div class="summary-item">
+                    <div class="summary-value" id="totalAgents">8</div>
+                    <div class="summary-label">Total Agents</div>
+                </div>
+                <div class="summary-item">
+                    <div class="summary-value" id="activeAgents">--</div>
+                    <div class="summary-label">Active Now</div>
+                </div>
+                <div class="summary-item">
+                    <div class="summary-value" id="totalTokens">--</div>
+                    <div class="summary-label">Total Tokens</div>
+                </div>
+                <div class="summary-item">
+                    <div class="summary-value" id="totalCost">--</div>
+                    <div class="summary-label">Total Cost</div>
+                </div>
+                <div class="summary-item">
+                    <div class="summary-value" id="totalTasks">--</div>
+                    <div class="summary-label">Tasks Completed</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="agents-grid" id="agentsGrid">
+            <div class="loading">
+                <h3>🔄 Loading individual agent data...</h3>
+                <p>Connecting to Claude Code session</p>
+            </div>
+        </div>
+    </div>
+
+    <div class="refresh-indicator" id="refreshIndicator">
+        🔄 Updating agent data...
+    </div>
+
+    <script>
+        class IndividualAgentMonitor {
+            constructor() {
+                this.agents = [];
+                this.refreshIndicator = document.getElementById('refreshIndicator');
+                this.loadAgentData();
+                this.startMonitoring();
+            }
+
+            async loadAgentData() {
+                this.showRefreshIndicator();
+                try {
+                    const response = await fetch('/api/claude-status');
+                    const data = await response.json();
+                    
+                    if (data.agents) {
+                        this.agents = data.agents;
+                        this.updateDisplay();
+                        this.updateSummary();
+                    }
+                } catch (error) {
+                    console.error('Error loading agent data:', error);
+                    this.showError();
+                } finally {
+                    this.hideRefreshIndicator();
+                }
+            }
+
+            updateDisplay() {
+                const grid = document.getElementById('agentsGrid');
+                if (!grid) return;
+
+                let html = '';
+                this.agents.forEach(agent => {
+                    const timeSince = Math.floor((Date.now() / 1000) - agent.lastActivity);
+                    const tokenCost = (agent.tokensUsed * 0.015 / 1000).toFixed(3);
+                    const avgTokensPerTask = Math.round(agent.tokensUsed / Math.max(agent.tasksCompleted, 1));
+
+                    html += `
+                        <div class="agent-card">
+                            <div class="agent-header">
+                                <div class="agent-icon">${this.getAgentIcon(agent.id)}</div>
+                                <div class="agent-info">
+                                    <div class="agent-name">${agent.name}</div>
+                                    <div class="agent-specialty">Efficiency: ${agent.efficiency}%</div>
+                                </div>
+                                <div class="agent-status ${agent.status}">
+                                    <span class="status-dot"></span>
+                                    ${agent.status.toUpperCase()}
+                                </div>
+                            </div>
+
+                            <div class="agent-metrics">
+                                <div class="metric">
+                                    <span class="metric-label">Tasks Done</span>
+                                    <span class="metric-value">${agent.tasksCompleted}</span>
+                                </div>
+                                <div class="metric">
+                                    <span class="metric-label">Tokens/Task</span>
+                                    <span class="metric-value">${avgTokensPerTask}</span>
+                                </div>
+                            </div>
+
+                            <div class="current-work">
+                                <div class="work-label">Current Work</div>
+                                <div class="work-description">${agent.currentTask}</div>
+                            </div>
+
+                            <div class="token-info">
+                                <div>
+                                    <span class="token-amount">${agent.tokensUsed.toLocaleString()} tokens</span>
+                                </div>
+                                <div class="token-cost">$${tokenCost}</div>
+                            </div>
+
+                            <div class="last-activity">
+                                Last activity: ${this.formatTimeSince(timeSince)}
+                            </div>
+                        </div>
+                    `;
+                });
+
+                grid.innerHTML = html;
+            }
+
+            updateSummary() {
+                const activeCount = this.agents.filter(a => a.status === 'active' || a.status === 'coordinating').length;
+                const totalTokens = this.agents.reduce((sum, a) => sum + a.tokensUsed, 0);
+                const totalCost = (totalTokens * 0.015 / 1000).toFixed(2);
+                const totalTasks = this.agents.reduce((sum, a) => sum + a.tasksCompleted, 0);
+
+                document.getElementById('activeAgents').textContent = activeCount;
+                document.getElementById('totalTokens').textContent = totalTokens.toLocaleString();
+                document.getElementById('totalCost').textContent = `$${totalCost}`;
+                document.getElementById('totalTasks').textContent = totalTasks;
+            }
+
+            getAgentIcon(agentId) {
+                const icons = {
+                    'shadcn-optimization': '📈',
+                    'performance-audit': '⚡',
+                    'accessibility': '♿',
+                    'code-quality': '🔍',
+                    'ui-testing': '🧪',
+                    'design-system': '🎨',
+                    'documentation': '📚',
+                    'orchestrator': '🎯'
+                };
+                return icons[agentId] || '🤖';
+            }
+
+            formatTimeSince(seconds) {
+                if (seconds < 60) return `${seconds}s ago`;
+                if (seconds < 3600) return `${Math.floor(seconds / 60)}m ago`;
+                return `${Math.floor(seconds / 3600)}h ago`;
+            }
+
+            showRefreshIndicator() {
+                this.refreshIndicator.classList.add('show');
+            }
+
+            hideRefreshIndicator() {
+                setTimeout(() => {
+                    this.refreshIndicator.classList.remove('show');
+                }, 1000);
+            }
+
+            showError() {
+                const grid = document.getElementById('agentsGrid');
+                grid.innerHTML = `
+                    <div class="loading">
+                        <h3>❌ Connection Error</h3>
+                        <p>Unable to connect to Claude Code session</p>
+                        <p><small>Make sure the monitor server is running</small></p>
+                    </div>
+                `;
+            }
+
+            startMonitoring() {
+                // Refresh every 3 seconds
+                setInterval(() => {
+                    this.loadAgentData();
+                }, 3000);
+            }
+        }
+
+        // Start monitoring when page loads
+        document.addEventListener('DOMContentLoaded', () => {
+            new IndividualAgentMonitor();
+        });
+    </script>
+</body>
+</html>

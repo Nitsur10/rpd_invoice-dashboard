@@ -1,0 +1,35 @@
+title: Phase 1 — Orchestration and Quality Gates
+description: |
+  Coordinate Phase 1 tasks to stabilize and secure the dashboard foundation.
+  Ensure API stability, security hygiene, UI field alignment, tests, and logging
+  are delivered and verified before progressing to Phase 2.
+labels:
+  - agent/orchestrator
+  - phase/1
+assignees: []
+milestone: Phase 1 — Stabilize & Secure
+dependsOn:
+  - 01-fix-api-base-url
+  - 02-server-only-supabase-admin
+  - 03-zod-validate-invoices-and-stats
+  - 04-fix-ui-field-mismatches
+  - 05-remove-inline-style-mutations-sidebar
+  - 06-api-contract-tests
+  - 07-observability-api-logging
+acceptanceCriteria:
+  - CI green: type-check, lint, tests all pass.
+  - API: Inputs validated (zod), errors standardized; contract tests cover good/bad cases.
+  - Security: No client import of server-only admin; no hardcoded localhost API base.
+  - UI: Invoices page uses canonical snake_case fields; actions work; no inline style mutations.
+  - Observability: API requests emit structured logs with latency and status; no PII logged.
+  - Issues linked to PRs and moved to Done in the Dashboard Refactor project.
+artifacts:
+  - CI run URL and status
+  - Links to PRs for tasks 01–07
+  - Brief summary of verified outcomes (1–2 paragraphs)
+steps:
+  - Ensure all dependent issues are In Progress and assigned to correct agents.
+  - Monitor PRs; enforce quality gates (checks must pass).
+  - Coordinate merges in order of dependency and risk.
+  - Publish short completion summary and move to Done.
+

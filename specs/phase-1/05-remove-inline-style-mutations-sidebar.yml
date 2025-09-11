@@ -1,0 +1,22 @@
+title: Replace sidebar inline style mutations with Tailwind/token-based classes
+description: |
+  Remove onMouseEnter/Leave style mutations in the sidebar and express hover/active
+  states through utility classes and tokens for performance and consistency.
+labels:
+  - agent/shadcn
+  - agent/design-system
+  - phase/1
+assignees: []
+milestone: Phase 1 — Stabilize & Secure
+acceptanceCriteria:
+  - No inline DOM style mutations for hover/active states.
+  - Visual behavior preserved using classes/tokens.
+  - Snapshot or visual check confirms no regression.
+files:
+  - invoice-dashboard/src/components/layout/sidebar.tsx
+  - invoice-dashboard/src/app/globals.css
+steps:
+  - Move styles to classes; use route-aware active styles via cn().
+  - Use CSS variables/OKLCH tokens for colors.
+  - Remove event handlers mutating styles.
+

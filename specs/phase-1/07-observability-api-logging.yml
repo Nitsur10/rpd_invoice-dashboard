@@ -1,0 +1,21 @@
+title: Add structured API logging for latency and errors
+description: |
+  Introduce structured logging around /api/* route handlers with correlation IDs
+  to capture latency, status codes, and errors. Avoid logging PII.
+labels:
+  - agent/observability
+  - phase/1
+assignees: []
+milestone: Phase 1 — Stabilize & Secure
+acceptanceCriteria:
+  - Route handlers log request ID, method, path, status, and latency.
+  - Errors include stack context but scrub PII.
+  - Simple inspection shows logs emitted during local calls.
+files:
+  - invoice-dashboard/src/lib/server/logging.ts
+  - invoice-dashboard/src/app/api/**/route.ts
+steps:
+  - Create logging utility with correlation ID generation.
+  - Wrap route handlers to measure and log latency and outcomes.
+  - Verify logs in local development.
+

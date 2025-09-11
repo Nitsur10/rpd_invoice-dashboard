@@ -1,0 +1,27 @@
+title: Add zod validation for invoices and stats APIs
+description: |
+  Validate query/body inputs for /api/invoices, /api/invoices/[id], and /api/stats
+  using zod. Enforce field whitelisting, type coercion, size caps, and
+  standardized error responses.
+labels:
+  - agent/backend-api
+  - agent/testing
+  - phase/1
+assignees: []
+milestone: Phase 1 — Stabilize & Secure
+acceptanceCriteria:
+  - All endpoints validate inputs and return 400 with code/message for invalid inputs.
+  - Sorting/limit params constrained (whitelisted fields, limit ≤ 200).
+  - Contract tests verify valid/invalid cases.
+files:
+  - invoice-dashboard/src/lib/schemas/invoice.ts
+  - invoice-dashboard/src/lib/schemas/pagination.ts
+  - invoice-dashboard/src/lib/schemas/stats.ts
+  - invoice-dashboard/src/app/api/invoices/route.ts
+  - invoice-dashboard/src/app/api/invoices/[id]/route.ts
+  - invoice-dashboard/src/app/api/stats/route.ts
+steps:
+  - Create zod schemas for invoices, pagination/sorting, stats date filters.
+  - Apply validation at route entry; map errors to 400 responses.
+  - Add/extend tests to cover validation errors and success paths.
+
