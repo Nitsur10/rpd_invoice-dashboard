@@ -1,0 +1,20 @@
+project:
+  name: "rpd-invoice-dashboard"
+  scope: "repo/invoice-dashboard"
+  
+repository:
+  name: "Nitsur10/rpd_invoice-dashboard"
+  
+specs:
+  paths:
+    - "specs/**/*.yml"
+    - "specs/**/*.yaml"
+  
+issues:
+  labels:
+    - "repo/invoice-dashboard"
+  
+quality_gates:
+  - name: "build-and-test"
+    type: "github_action"
+    workflow: "ci.yml"

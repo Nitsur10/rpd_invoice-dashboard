@@ -39,6 +39,9 @@ interface DateFilter {
   endDate?: Date
 }
 
+// Force this page to be client-only (no SSR/SSG)
+export const dynamic = 'force-dynamic'
+
 export default function InvoicesPage() {
   // Table state - server-side pagination
   const [sorting, setSorting] = React.useState<SortingState>([])
@@ -76,21 +79,25 @@ export default function InvoicesPage() {
     queryFn: () => fetchInvoices(apiParams),
     staleTime: 2 * 60 * 1000, // 2 minutes
     placeholderData: 'keepPreviousData', // Keep previous data while loading new page
+    enabled: typeof window !== 'undefined', // Only fetch on client-side
   })
 
   const invoices = React.useMemo(() => {
-    const rows = data?.data || []
+    if (!data?.data) return []
+    const rows = data.data || []
     // Normalize date fields to Date objects for UI
     return rows.map((inv: any) => ({
       ...inv,
+      amount: inv.amount || 0, // Ensure amount is always a number
+      status: inv.status || 'pending', // Ensure status is always defined
       issueDate: inv.issueDate ? new Date(inv.issueDate) : undefined,
       dueDate: inv.dueDate ? new Date(inv.dueDate) : undefined,
       receivedDate: inv.receivedDate ? new Date(inv.receivedDate) : undefined,
       paidDate: inv.paidDate ? new Date(inv.paidDate) : undefined,
     }))
   }, [data])
-  const totalCount = data?.pagination.total || 0
-  const pageCount = data?.pagination.pageCount || 0
+  const totalCount = data?.pagination?.total || 0
+  const pageCount = data?.pagination?.pageCount || 0
 
   // Statistics from the API response
   const stats = React.useMemo(() => {
@@ -100,10 +107,10 @@ export default function InvoicesPage() {
 
     return {
       total: totalCount,
-      totalAmount: invoices.reduce((sum, inv) => sum + inv.amount, 0),
-      pending: invoices.filter(inv => inv.paymentStatus === 'PENDING').length,
-      paid: invoices.filter(inv => inv.paymentStatus === 'PAID').length,
-      overdue: invoices.filter(inv => inv.paymentStatus === 'OVERDUE').length,
+      totalAmount: invoices.reduce((sum, inv) => sum + (inv.amount || 0), 0),
+      pending: invoices.filter(inv => inv.status === 'pending').length,
+      paid: invoices.filter(inv => inv.status === 'paid').length,
+      overdue: invoices.filter(inv => inv.status === 'overdue').length,
     }
   }, [invoices, totalCount])
 

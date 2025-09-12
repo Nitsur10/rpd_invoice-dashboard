@@ -1,0 +1,57 @@
+name: "[IDASH] Sidebar: Replace Inline Style Mutations with Classes/Tokens"
+description: |
+  Clean up sidebar component to use proper CSS classes and design tokens instead of 
+  direct DOM style mutations via onMouseEnter/onMouseLeave handlers.
+
+labels:
+  - "repo/invoice-dashboard"
+  - "phase-2" 
+  - "ui-cleanup"
+  - "accessibility"
+
+priority: "medium"
+
+acceptance_criteria:
+  - No onMouseEnter/onMouseLeave style mutations in sidebar component
+  - Hover effects implemented with CSS classes and Tailwind utilities
+  - Same visual behavior as current implementation
+  - Better accessibility and performance (no JS style mutations)
+  - Cleaner, more maintainable code
+  - Consistent with design system patterns
+
+files_to_modify:
+  - "src/components/layout/sidebar.tsx"
+  - "src/app/globals.css" (if custom hover states needed)
+
+technical_requirements:
+  - Remove all direct style object assignments in event handlers
+  - Use Tailwind hover: variants for interactive states
+  - Use CSS custom properties for color values if needed
+  - Maintain current visual design exactly
+  - Ensure smooth transitions and animations
+  - Support dark mode if applicable
+
+implementation_steps:
+  1. Audit current sidebar.tsx for style mutations
+  2. Identify all hover effects and color changes
+  3. Create equivalent Tailwind classes for hover states
+  4. Replace onMouseEnter/onMouseLeave with CSS classes
+  5. Test all hover interactions work identically
+  6. Verify accessibility and keyboard navigation
+  7. Clean up any unused style-related code
+
+current_issues_to_fix:
+  - Direct style mutations: `e.currentTarget.style.background = '...'`
+  - Inline color assignments: `e.currentTarget.style.color = '...'`
+  - JavaScript-based hover state management
+  - Performance overhead from event handlers
+
+quality_gates:
+  - No JavaScript style mutations in component code
+  - All hover effects work identically to current implementation
+  - No accessibility regressions
+  - Code is more maintainable and follows React best practices
+  - Performance improved (no runtime style calculations)
+
+branch: "feat/phase2-12-sidebar-cleanup" 
+estimated_effort: "2-3 hours"

@@ -1,0 +1,51 @@
+name: "[IDASH] Phase 2 Orchestration"
+description: |
+  Phase 2 Orchestration: Unify dashboard data sources, finish UI alignment, optimize table performance, and complete sidebar refactor.
+  
+  This orchestrator spec depends on all Phase 2 task specs (08-13) and ensures proper execution order with quality gates.
+
+labels:
+  - "repo/invoice-dashboard"
+  - "phase-2"
+  - "orchestration"
+
+priority: "high"
+
+acceptance_criteria:
+  - All Phase 2 tasks (08-13) completed successfully
+  - No runtime imports of legacy JSON in components/pages  
+  - Charts and activity use API endpoints with consistent KPIs
+  - Table uses server-side pagination/sorting with virtualization
+  - Sidebar uses class/tokens only (no DOM style mutations)
+  - CI green for all tasks: type-check, lint, tests
+  - Performance budgets established (optional)
+
+dependencies:
+  - "08-charts-activity-api"
+  - "09-remove-legacy-json" 
+  - "10-table-server-pagination"
+  - "11-table-virtualization"
+  - "12-sidebar-cleanup"
+  - "13-observability-budgets"
+
+quality_gates:
+  - name: "build-and-test"
+    type: "github_action" 
+    workflow: "ci.yml"
+  - name: "no-legacy-json-runtime"
+    type: "validation"
+    description: "Ensure no runtime imports of legacy JSON files in components"
+  - name: "api-data-consistency" 
+    type: "validation"
+    description: "Verify chart/activity data matches dashboard stats API"
+
+implementation_notes: |
+  Execute tasks in dependency order:
+  1. Task 08: Move charts/activity to APIs
+  2. Task 09: Remove legacy JSON dependencies  
+  3. Task 10: Server-side table pagination
+  4. Task 11: Row virtualization
+  5. Task 12: Sidebar class/tokens cleanup
+  6. Task 13: Observability budgets (optional)
+
+estimated_effort: "16-24 hours"

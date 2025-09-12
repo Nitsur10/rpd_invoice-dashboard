@@ -1,0 +1,10 @@
+{
+  "totalInvoices": 3,
+  "totalAmount": 7036.5,
+  "bySourceTab": {
+    "tab1": 1,
+    "tab2": 1,
+    "tab3": 1
+  },
+  "processedAt": "2025-09-09T12:44:23.346Z"
+}

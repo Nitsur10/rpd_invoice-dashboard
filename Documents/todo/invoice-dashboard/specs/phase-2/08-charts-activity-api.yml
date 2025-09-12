@@ -1,0 +1,50 @@
+name: "[IDASH] Move Charts and Recent Activity to Stats/Audit APIs"
+description: |
+  Replace legacy JSON data sources in charts and recent activity components with proper API endpoints.
+  Ensure charts use /api/stats and recent activity uses /api/audit for consistent data.
+
+labels:
+  - "repo/invoice-dashboard" 
+  - "phase-2"
+  - "api-migration"
+
+priority: "high"
+
+acceptance_criteria:
+  - Charts components fetch data from /api/stats endpoint with React Query
+  - Recent activity feed uses /api/audit?type=recent&limit=N endpoint
+  - Remove all imports of real-consolidated-data from chart components
+  - Add proper loading, empty, and error states to all components
+  - KPI numbers consistent between dashboard cards and charts
+  - No client-side data processing of large datasets
+
+files_to_modify:
+  - "src/components/charts/**"
+  - "src/components/dashboard/recent-activity-feed.tsx"
+  - "src/app/page.tsx" (dashboard page)
+
+technical_requirements:
+  - Use React Query (@tanstack/react-query) for API caching
+  - Add proper TypeScript interfaces for API responses
+  - Handle loading states with skeletons or spinners  
+  - Show empty states when no data available
+  - Display error states with retry functionality
+  - Ensure charts re-render when API data updates
+
+implementation_steps:
+  1. Install @tanstack/react-query if not present
+  2. Set up React Query provider in app layout
+  3. Create custom hooks for /api/stats and /api/audit queries
+  4. Update chart components to use API hooks instead of JSON imports
+  5. Update recent activity to use /api/audit endpoint
+  6. Add loading/empty/error state components
+  7. Test data consistency between dashboard and charts
+
+quality_gates:
+  - No imports of real-consolidated-data in component files
+  - Charts display same KPIs as dashboard stats cards
+  - All loading/empty/error states render correctly
+  - Network tab shows API calls, not large JSON processing
+
+branch: "feat/phase2-08-charts-activity-api"
+estimated_effort: "4-6 hours"
