@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { supabaseAdmin } from '@/lib/server/supabase-admin';
 import { withLogging } from '@/lib/server/logging';
 import { statsQuerySchema } from '@/lib/schemas/stats';
+import { isSupabaseConfigured } from '@/lib/server/env';
 
 // Get outstanding invoices from Supabase
 async function getOutstandingHandler(request: NextRequest) {
@@ -22,8 +23,10 @@ async function getOutstandingHandler(request: NextRequest) {
     const effectiveFrom = dateFrom || defaultFrom;
     
     // Build base query with date filtering
+    const primaryTable = process.env.SUPABASE_INVOICES_TABLE || 'invoices';
+    const fallbackTable = primaryTable === 'invoices' ? 'Invoice' : 'invoices';
     let baseQuery = supabaseAdmin
-      .from('invoices')
+      .from(primaryTable)
       .select('*');
     
     if (effectiveFrom) {
@@ -34,7 +37,15 @@ async function getOutstandingHandler(request: NextRequest) {
     }
     
     // Get all invoices
-    const { data: allInvoices, error } = await baseQuery.select('*');
+    let { data: allInvoices, error } = await baseQuery.select('*');
+    if (error && (error as any).code === 'PGRST205') {
+      const fb = supabaseAdmin.from(fallbackTable).select('*')
+        .gte('invoice_date', effectiveFrom)
+        .lte('invoice_date', dateTo || new Date().toISOString());
+      const fbRes = await fb;
+      allInvoices = fbRes.data as any[];
+      error = fbRes.error as any;
+    }
     
     if (error) {
       console.warn('Supabase query error in /api/outstanding, returning empty:', error);
@@ -111,3 +122,19 @@ async function getOutstandingHandler(request: NextRequest) {
 }
 
 export const GET = withLogging(getOutstandingHandler, 'GET /api/outstanding');
+    // Return safe empty payload when Supabase not configured
+    if (!isSupabaseConfigured()) {
+      return NextResponse.json({
+        outstanding: [],
+        summary: {
+          totalOutstanding: 0,
+          totalCount: 0,
+          overdueCount: 0,
+          largestInvoice: 0,
+        },
+        metadata: {
+          generatedAt: new Date().toISOString(),
+          dateRange: { from: dateFrom || null, to: dateTo || null },
+        },
+      });
+    }

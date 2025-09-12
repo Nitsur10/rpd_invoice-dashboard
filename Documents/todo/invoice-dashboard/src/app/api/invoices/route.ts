@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { supabaseAdmin } from '@/lib/server/supabase-admin';
+import { isSupabaseConfigured } from '@/lib/server/env';
 
 // Get invoices with server-side filtering, sorting, and pagination (Supabase)
 export async function GET(request: NextRequest) {
@@ -33,9 +34,26 @@ export async function GET(request: NextRequest) {
     const dateTo = searchParams.get('dateTo');
     const statusFilters = searchParams.getAll('paymentStatus'); // array
 
+    // If Supabase is not configured, return safe empty payload
+    if (!isSupabaseConfigured()) {
+      return NextResponse.json({
+        data: [],
+        pagination: {
+          total: 0,
+          pageCount: 0,
+          pageSize: limit,
+          pageIndex: page,
+        }
+      });
+    }
+
+    // Resolve table with fallback
+    const primaryTable = process.env.SUPABASE_INVOICES_TABLE || 'invoices';
+    const fallbackTable = primaryTable === 'invoices' ? 'Invoice' : 'invoices';
+
     // Build query
     let query = supabaseAdmin
-      .from('invoices')
+      .from(primaryTable)
       .select('*', { count: 'exact' })
       .order(sortBy, { ascending: sortOrder === 'asc' })
       .range(offset, offset + limit - 1);
@@ -59,7 +77,27 @@ export async function GET(request: NextRequest) {
       query = query.in('payment_status', values);
     }
 
-    const { data, error, count } = await query;
+    let { data, error, count } = await query;
+    // Fallback to alternate table name if table not found
+    if (error && (error as any).code === 'PGRST205') {
+      let fb = supabaseAdmin
+        .from(fallbackTable)
+        .select('*', { count: 'exact' })
+        .order(sortBy, { ascending: sortOrder === 'asc' })
+        .range(offset, offset + limit - 1);
+      if (search) {
+        fb = fb.or(`invoice_number.ilike.%${search}%,supplier_name.ilike.%${search}%,description.ilike.%${search}%`)
+      }
+      if (dateFrom) fb = fb.gte('created_at', dateFrom);
+      if (dateTo) fb = fb.lte('created_at', dateTo);
+      if (statusFilters.length > 0) fb = fb.in('payment_status', statusFilters.map(s => s.toLowerCase()));
+
+      const fbRes = await fb;
+      data = fbRes.data as any[];
+      error = fbRes.error as any;
+      count = (fbRes as any).count as number;
+    }
+
     if (error) {
       console.warn('Supabase error in /api/invoices, returning empty list:', error);
       return NextResponse.json({

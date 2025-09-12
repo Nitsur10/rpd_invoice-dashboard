@@ -70,10 +70,13 @@ async function getStatsHandler(request: NextRequest) {
     }
 
     // Build base query (align table name)
+    // Resolve table name with env override and fallback
+    const primaryTable = process.env.SUPABASE_INVOICES_TABLE || 'invoices';
+    const fallbackTable = primaryTable === 'invoices' ? 'Invoice' : 'invoices';
+
     // Only select fields needed for stats to minimize payload
-    let query_builder = supabaseAdmin.from('invoices').select(
-      'id,total,payment_status,category,supplier_name,created_at,updated_at,invoice_date'
-    );
+    const selectCols = 'id,total,payment_status,category,supplier_name,created_at,updated_at,invoice_date';
+    let query_builder = supabaseAdmin.from(primaryTable).select(selectCols);
 
     if (effectiveFrom) {
       // Use invoice_date if present, otherwise created_at
@@ -84,7 +87,18 @@ async function getStatsHandler(request: NextRequest) {
       query_builder = query_builder.lte('created_at', dateTo);
     }
 
-    const { data: invoices, error } = await query_builder;
+    let { data: invoices, error } = await query_builder;
+
+    // Fallback to alternate table name if table not found
+    if (error && (error as any).code === 'PGRST205') {
+      const fb = supabaseAdmin
+        .from(fallbackTable)
+        .select(selectCols)
+        .gte('invoice_date', effectiveFrom);
+      const fbRes = await fb;
+      invoices = fbRes.data as any[];
+      error = fbRes.error as any;
+    }
 
     if (error) {
       console.warn('Database error in /api/stats, returning empty stats:', error);
