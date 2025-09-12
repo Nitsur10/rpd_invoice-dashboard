@@ -78,7 +78,17 @@ export default function InvoicesPage() {
     placeholderData: 'keepPreviousData', // Keep previous data while loading new page
   })
 
-  const invoices = data?.data || []
+  const invoices = React.useMemo(() => {
+    const rows = data?.data || []
+    // Normalize date fields to Date objects for UI
+    return rows.map((inv: any) => ({
+      ...inv,
+      issueDate: inv.issueDate ? new Date(inv.issueDate) : undefined,
+      dueDate: inv.dueDate ? new Date(inv.dueDate) : undefined,
+      receivedDate: inv.receivedDate ? new Date(inv.receivedDate) : undefined,
+      paidDate: inv.paidDate ? new Date(inv.paidDate) : undefined,
+    }))
+  }, [data])
   const totalCount = data?.pagination.total || 0
   const pageCount = data?.pagination.pageCount || 0
 
