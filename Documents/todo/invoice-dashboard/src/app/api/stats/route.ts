@@ -18,6 +18,8 @@ async function getStatsHandler(request: NextRequest) {
     }
 
     const { dateFrom, dateTo, triggerError } = parsed.data;
+    const defaultFrom = '2025-05-01T00:00:00.000Z';
+    const effectiveFrom = dateFrom || defaultFrom;
 
     // Simulate error for testing
     if (triggerError) {
@@ -30,8 +32,8 @@ async function getStatsHandler(request: NextRequest) {
     // Build base query (align table name)
     let query_builder = supabaseAdmin.from('invoices').select('*');
 
-    if (dateFrom) {
-      query_builder = query_builder.gte('created_at', dateFrom);
+    if (effectiveFrom) {
+      query_builder = query_builder.gte('created_at', effectiveFrom);
     }
     
     if (dateTo) {
@@ -136,7 +138,7 @@ async function getStatsHandler(request: NextRequest) {
         },
       }));
 
-    const periodStart = dateFrom || new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString();
+    const periodStart = effectiveFrom || new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString();
     const periodEnd = dateTo || new Date().toISOString();
     const periodDays = Math.ceil(
       (new Date(periodEnd).getTime() - new Date(periodStart).getTime()) / (1000 * 60 * 60 * 24)

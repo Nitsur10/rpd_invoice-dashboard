@@ -29,7 +29,7 @@ export async function GET(request: NextRequest) {
     
     // Filters
     const search = searchParams.get('search') || '';
-    const dateFrom = searchParams.get('dateFrom');
+    const dateFrom = searchParams.get('dateFrom') || '2025-05-01T00:00:00.000Z';
     const dateTo = searchParams.get('dateTo');
     const statusFilters = searchParams.getAll('paymentStatus'); // array
 

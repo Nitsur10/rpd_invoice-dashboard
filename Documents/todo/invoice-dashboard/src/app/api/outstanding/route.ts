@@ -18,14 +18,16 @@ async function getOutstandingHandler(request: NextRequest) {
     }
 
     const { dateFrom, dateTo } = parsed.data;
+    const defaultFrom = '2025-05-01T00:00:00.000Z';
+    const effectiveFrom = dateFrom || defaultFrom;
     
     // Build base query with date filtering
     let baseQuery = supabaseAdmin
       .from('invoices')
       .select('*');
     
-    if (dateFrom) {
-      baseQuery = baseQuery.gte('invoice_date', dateFrom);
+    if (effectiveFrom) {
+      baseQuery = baseQuery.gte('invoice_date', effectiveFrom);
     }
     if (dateTo) {
       baseQuery = baseQuery.lte('invoice_date', dateTo);
