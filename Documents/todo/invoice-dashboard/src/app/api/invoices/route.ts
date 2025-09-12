@@ -61,11 +61,16 @@ export async function GET(request: NextRequest) {
 
     const { data, error, count } = await query;
     if (error) {
-      console.error('Supabase error:', error);
-      return NextResponse.json(
-        { code: 'SERVER_ERROR', message: 'Failed to fetch invoices' },
-        { status: 500 }
-      );
+      console.warn('Supabase error in /api/invoices, returning empty list:', error);
+      return NextResponse.json({
+        data: [],
+        pagination: {
+          total: 0,
+          pageCount: 0,
+          pageSize: limit,
+          pageIndex: page,
+        }
+      });
     }
 
     const rows = (data || []).map((row: any) => ({

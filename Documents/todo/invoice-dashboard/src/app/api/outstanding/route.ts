@@ -37,11 +37,20 @@ async function getOutstandingHandler(request: NextRequest) {
     const { data: allInvoices, error } = await baseQuery.select('*');
     
     if (error) {
-      console.error('Supabase query error:', error);
-      return NextResponse.json(
-        { code: 'SERVER_ERROR', message: 'Failed to fetch invoice data' },
-        { status: 500 }
-      );
+      console.warn('Supabase query error in /api/outstanding, returning empty:', error);
+      return NextResponse.json({
+        outstanding: [],
+        summary: {
+          totalOutstanding: 0,
+          totalCount: 0,
+          overdueCount: 0,
+          largestInvoice: 0,
+        },
+        metadata: {
+          generatedAt: new Date().toISOString(),
+          dateRange: { from: effectiveFrom || null, to: dateTo || null }
+        }
+      });
     }
     
     const now = new Date();

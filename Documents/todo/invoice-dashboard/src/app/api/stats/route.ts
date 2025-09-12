@@ -43,11 +43,28 @@ async function getStatsHandler(request: NextRequest) {
     const { data: invoices, error } = await query_builder;
 
     if (error) {
-      console.error('Database error:', error);
-      return NextResponse.json(
-        { code: 'SERVER_ERROR', message: 'Failed to fetch invoice statistics' },
-        { status: 500 }
-      );
+      console.warn('Database error in /api/stats, returning empty stats:', error);
+      const empty = {
+        overview: {
+          totalInvoices: 0,
+          pendingPayments: 0,
+          overduePayments: 0,
+          paidInvoices: 0,
+          totalAmount: 0,
+          pendingAmount: 0,
+          overdueAmount: 0,
+          paidAmount: 0,
+          trends: { invoices: 0, amount: 0 },
+        },
+        breakdowns: { processingStatus: [], categories: [], topVendors: [] },
+        recentActivity: [],
+        metadata: {
+          generatedAt: new Date().toISOString(),
+          dateRange: { from: effectiveFrom || null, to: dateTo || null },
+          periodDays: 0,
+        },
+      };
+      return NextResponse.json(empty);
     }
 
     const invoiceList = invoices || [];
