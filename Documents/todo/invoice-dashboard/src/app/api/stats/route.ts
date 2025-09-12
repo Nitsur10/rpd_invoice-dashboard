@@ -3,6 +3,11 @@ import { supabaseAdmin } from '@/lib/server/supabase-admin';
 import { statsQuerySchema } from '@/lib/schemas/stats';
 import { withLogging } from '@/lib/server/logging';
 
+// Simple in-memory cache to reduce load and latency
+const TTL_MS = 60_000; // 60 seconds
+let cache: { key: string; at: number; payload: any } | null = null;
+import { isSupabaseConfigured } from '@/lib/server/env';
+
 async function getStatsHandler(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url);
@@ -21,6 +26,12 @@ async function getStatsHandler(request: NextRequest) {
     const defaultFrom = '2025-05-01T00:00:00.000Z';
     const effectiveFrom = dateFrom || defaultFrom;
 
+    // Cache key and lookup
+    const key = JSON.stringify({ from: effectiveFrom, to: dateTo || null });
+    if (cache && cache.key === key && Date.now() - cache.at < TTL_MS) {
+      return NextResponse.json(cache.payload);
+    }
+
     // Simulate error for testing
     if (triggerError) {
       return NextResponse.json(
@@ -29,11 +40,44 @@ async function getStatsHandler(request: NextRequest) {
       );
     }
 
+    // If Supabase not configured, return safe empty stats
+    if (!isSupabaseConfigured()) {
+      const response = {
+        overview: {
+          totalInvoices: 0,
+          pendingPayments: 0,
+          overduePayments: 0,
+          paidInvoices: 0,
+          totalAmount: 0,
+          pendingAmount: 0,
+          overdueAmount: 0,
+          paidAmount: 0,
+          trends: { invoices: 0, amount: 0 },
+        },
+        breakdowns: {
+          processingStatus: [],
+          categories: [],
+          topVendors: [],
+        },
+        recentActivity: [],
+        metadata: {
+          generatedAt: new Date().toISOString(),
+          dateRange: { from: parsed.data.dateFrom || null, to: parsed.data.dateTo || null },
+          periodDays: 0,
+        },
+      };
+      return NextResponse.json(response);
+    }
+
     // Build base query (align table name)
-    let query_builder = supabaseAdmin.from('invoices').select('*');
+    // Only select fields needed for stats to minimize payload
+    let query_builder = supabaseAdmin.from('invoices').select(
+      'id,total,payment_status,category,supplier_name,created_at,updated_at,invoice_date'
+    );
 
     if (effectiveFrom) {
-      query_builder = query_builder.gte('created_at', effectiveFrom);
+      // Use invoice_date if present, otherwise created_at
+      query_builder = query_builder.gte('invoice_date', effectiveFrom);
     }
     
     if (dateTo) {
@@ -64,6 +108,7 @@ async function getStatsHandler(request: NextRequest) {
           periodDays: 0,
         },
       };
+      cache = { key, at: Date.now(), payload: empty };
       return NextResponse.json(empty);
     }
 
@@ -192,6 +237,7 @@ async function getStatsHandler(request: NextRequest) {
       },
     };
 
+    cache = { key, at: Date.now(), payload: response };
     return NextResponse.json(response);
 
   } catch (error) {

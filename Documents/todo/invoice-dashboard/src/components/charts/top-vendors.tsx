@@ -1,21 +1,19 @@
-'use client'
+"use client"
 
-import { useQuery } from '@tanstack/react-query'
-import { fetchDashboardStats } from '@/lib/api/stats'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts'
 
-export function TopVendors() {
-  const { data, isLoading, error } = useQuery({
-    queryKey: ['dashboard-stats', 'topVendors'],
-    queryFn: async () => (await fetchDashboardStats()).data,
-    staleTime: 5 * 60 * 1000,
-  })
-
-  const vendors = data?.breakdowns.topVendors?.slice(0, 8).map(v => ({
+export function TopVendors({
+  data,
+  isLoading,
+}: {
+  data: Array<{ vendor: string; count: number; amount: number }>
+  isLoading?: boolean
+}) {
+  const vendors = (data || []).slice(0, 8).map(v => ({
     name: v.vendor,
     amount: Math.round(v.amount || 0),
-  })) ?? []
+  }))
 
   return (
     <Card>
@@ -25,8 +23,6 @@ export function TopVendors() {
       <CardContent style={{ height: 300 }}>
         {isLoading ? (
           <div className="h-full rounded bg-slate-100 dark:bg-slate-800 animate-pulse" />
-        ) : error ? (
-          <div className="text-sm text-red-600">Failed to load vendors</div>
         ) : (
           <ResponsiveContainer width="100%" height="100%">
             <BarChart data={vendors}>
@@ -41,4 +37,3 @@ export function TopVendors() {
     </Card>
   )
 }
-

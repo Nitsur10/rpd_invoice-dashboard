@@ -99,8 +99,14 @@ export default function Dashboard() {
 
       {/* Charts Grid (replaces quick actions, recent activity, and bottom cards) */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <CategoryBreakdown />
-        <TopVendors />
+        <CategoryBreakdown 
+          data={statsQ.data?.breakdowns.categories ?? []}
+          isLoading={statsQ.isLoading}
+        />
+        <TopVendors 
+          data={statsQ.data?.breakdowns.topVendors ?? []}
+          isLoading={statsQ.isLoading}
+        />
       </div>
     </div>
   );
