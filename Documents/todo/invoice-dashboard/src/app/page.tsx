@@ -1,10 +1,11 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useEffect, useState, memo } from 'react';
+import dynamic from 'next/dynamic';
 import { StatsCards } from '@/components/dashboard/stats-cards';
-// Charts (replacing quick actions and activity)
-import { CategoryBreakdown } from '@/components/charts/category-breakdown';
-import { TopVendors } from '@/components/charts/top-vendors';
+// Charts (lazy client-only to avoid hydration cost)
+const CategoryBreakdown = dynamic(() => import('@/components/charts/category-breakdown').then(m => m.CategoryBreakdown), { ssr: false, loading: () => <div className="h-72 rounded bg-slate-100 dark:bg-slate-800 animate-pulse" /> });
+const TopVendors = dynamic(() => import('@/components/charts/top-vendors').then(m => m.TopVendors), { ssr: false, loading: () => <div className="h-72 rounded bg-slate-100 dark:bg-slate-800 animate-pulse" /> });
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -22,26 +23,21 @@ import { formatDateForSydney } from '@/lib/data';
 import { useQuery } from '@tanstack/react-query';
 import { fetchDashboardStats } from '@/lib/api/stats';
 
-export default function Dashboard() {
-  const [currentTime, setCurrentTime] = useState<string>('');
-
+function Clock() {
+  const [now, setNow] = useState<string>('');
   useEffect(() => {
-    const updateTime = () => {
-      setCurrentTime(formatDateForSydney(new Date()));
-    };
-    
-    updateTime();
-    const interval = setInterval(updateTime, 1000);
-    
-    return () => clearInterval(interval);
+    const id = setInterval(() => setNow(formatDateForSydney(new Date())), 1000);
+    setNow(formatDateForSydney(new Date()));
+    return () => clearInterval(id);
   }, []);
+  return <span className="text-sm text-slate-500 dark:text-slate-400 font-mono">{now}</span>;
+}
+
+export default function Dashboard() {
 
   const statsQ = useQuery({
     queryKey: ['dashboard-stats'],
-    queryFn: async () => {
-      const res = await fetchDashboardStats();
-      return res.data;
-    },
+    queryFn: () => fetchDashboardStats(),
     staleTime: 5 * 60 * 1000,
   });
 
@@ -68,9 +64,7 @@ export default function Dashboard() {
           </p>
           <div className="flex items-center space-x-2 mt-2">
             <Calendar className="h-4 w-4 text-slate-500" />
-            <span className="text-sm text-slate-500 dark:text-slate-400 font-mono">
-              {currentTime}
-            </span>
+            <Clock />
           </div>
         </div>
         

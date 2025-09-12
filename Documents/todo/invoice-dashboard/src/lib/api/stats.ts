@@ -57,14 +57,12 @@ export interface StatsParams {
   triggerError?: boolean
 }
 
-const API_BASE = process.env.NODE_ENV === 'development' ? '' : '/api'
-
 export async function fetchDashboardStats(params: StatsParams = {}): Promise<DashboardStats> {
   const startTime = Date.now()
   
   try {
-    const url = new URL(`${API_BASE}/api/stats`, 
-      typeof window !== 'undefined' ? window.location.origin : 'http://localhost:3001')
+    const url = new URL(`/api/stats`, 
+      typeof window !== 'undefined' ? window.location.origin : 'http://localhost:3000')
     
     // Add query parameters
     Object.entries(params).forEach(([key, value]) => {
@@ -73,7 +71,7 @@ export async function fetchDashboardStats(params: StatsParams = {}): Promise<Das
       }
     })
 
-    const response = await fetch(url.toString())
+    const response = await fetch(url.toString(), { cache: 'no-store' })
     
     if (!response.ok) {
       throw new Error(`Stats API failed: ${response.status} ${response.statusText}`)
@@ -85,9 +83,8 @@ export async function fetchDashboardStats(params: StatsParams = {}): Promise<Das
     // Log API performance for budget tracking (client-side)
     trackAPIPerformance('/api/stats', duration)
     
-    if (process.env.NODE_ENV === 'development') {
-      console.log(`[Stats API] Success: ${duration}ms`, { params })
-    }
+    // Optional console log in dev
+    // console.log(`[Stats API] Success: ${duration}ms`, { params })
 
     return data
   } catch (error) {
@@ -96,10 +93,23 @@ export async function fetchDashboardStats(params: StatsParams = {}): Promise<Das
     // Track failed requests too
     trackAPIPerformance('/api/stats', duration)
     
-    if (process.env.NODE_ENV === 'development') {
-      console.error(`[Stats API] Error: ${duration}ms`, { params, error })
+    // Swallow errors and return safe default so UI stays responsive
+    const empty: DashboardStats = {
+      overview: {
+        totalInvoices: 0,
+        pendingPayments: 0,
+        overduePayments: 0,
+        paidInvoices: 0,
+        totalAmount: 0,
+        pendingAmount: 0,
+        overdueAmount: 0,
+        paidAmount: 0,
+        trends: { invoices: 0, amount: 0 },
+      },
+      breakdowns: { processingStatus: [], categories: [], topVendors: [] },
+      recentActivity: [],
+      metadata: { generatedAt: new Date().toISOString(), dateRange: { from: null, to: null }, periodDays: 0 },
     }
-    
-    throw error
+    return empty
   }
 }
