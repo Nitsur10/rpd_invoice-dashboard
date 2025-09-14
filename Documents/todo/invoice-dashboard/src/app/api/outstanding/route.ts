@@ -122,19 +122,3 @@ async function getOutstandingHandler(request: NextRequest) {
 }
 
 export const GET = withLogging(getOutstandingHandler, 'GET /api/outstanding');
-    // Return safe empty payload when Supabase not configured
-    if (!isSupabaseConfigured()) {
-      return NextResponse.json({
-        outstanding: [],
-        summary: {
-          totalOutstanding: 0,
-          totalCount: 0,
-          overdueCount: 0,
-          largestInvoice: 0,
-        },
-        metadata: {
-          generatedAt: new Date().toISOString(),
-          dateRange: { from: dateFrom || null, to: dateTo || null },
-        },
-      });
-    }
