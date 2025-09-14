@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { supabaseAdmin } from '@/lib/server/supabase-admin';
 import { isSupabaseConfigured } from '@/lib/server/env';
+import { PaymentStatus } from '@/lib/types';
 
 // Get invoices with server-side filtering, sorting, and pagination (Supabase)
 export async function GET(request: NextRequest) {
@@ -72,7 +73,7 @@ export async function GET(request: NextRequest) {
       query = query.lte('created_at', dateTo);
     }
     if (statusFilters.length > 0) {
-      // Normalize to lower case
+      // Normalize to lower case for database query
       const values = statusFilters.map(s => s.toLowerCase());
       query = query.in('payment_status', values);
     }
@@ -120,7 +121,7 @@ export async function GET(request: NextRequest) {
       amountDue: row.amount_due ?? row.total ?? 0,
       issueDate: row.invoice_date,
       dueDate: row.due_date,
-      status: (row.payment_status || 'pending').toLowerCase(),
+      status: (row.payment_status || 'PENDING').toUpperCase() as PaymentStatus,
       description: row.description || '',
       category: row.category || 'Uncategorized',
       paymentTerms: row.payment_terms || 'Net 30',

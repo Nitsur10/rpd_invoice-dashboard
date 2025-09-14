@@ -7,7 +7,7 @@ export interface Invoice {
   amountDue: number;
   issueDate: Date;
   dueDate: Date;
-  status: 'pending' | 'paid' | 'overdue';
+  status: PaymentStatus;
   description: string;
   category: string;
   paymentTerms: string;
@@ -20,7 +20,7 @@ export type InvoiceCategory = 'standard_pdf' | 'xero_with_pdf' | 'xero_links_onl
 
 export type ProcessingStatus = 'Processed' | 'Needs Manual Download' | 'Pending' | 'Failed';
 
-export type PaymentStatus = 'pending' | 'paid' | 'overdue';
+export type PaymentStatus = 'PENDING' | 'PAID' | 'OVERDUE';
 
 export interface DashboardStats {
   totalInvoices: number;
