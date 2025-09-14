@@ -2,7 +2,7 @@
 const nextConfig = {
   serverExternalPackages: ['@supabase/supabase-js'],
   typescript: {
-    // Allow build to complete even with type errors for now
+    // Allow build to complete even with type errors for deployment
     ignoreBuildErrors: true,
   },
   eslint: {

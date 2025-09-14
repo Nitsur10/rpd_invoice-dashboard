@@ -42,6 +42,19 @@ async function getAuditHandler(request: NextRequest) {
       );
     }
 
+    // If Supabase is not configured, return safe empty payload
+    if (!isSupabaseConfigured()) {
+      return NextResponse.json({
+        data: [],
+        pagination: {
+          total: 0,
+          pageCount: 0,
+          pageSize: limit,
+          pageIndex: page,
+        },
+      });
+    }
+
     // Build the query - using audit_logs table
     let query_builder = supabaseAdmin
       .from('audit_logs')
@@ -155,15 +168,3 @@ async function getAuditHandler(request: NextRequest) {
 }
 
 export const GET = withLogging(getAuditHandler, 'GET /api/audit');
-    // Safe empty response when Supabase not configured
-    if (!isSupabaseConfigured()) {
-      return NextResponse.json({
-        data: [],
-        pagination: {
-          total: 0,
-          pageCount: 0,
-          pageSize: limit,
-          pageIndex: page,
-        },
-      });
-    }
