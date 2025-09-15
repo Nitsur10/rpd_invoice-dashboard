@@ -9,16 +9,9 @@ const nextConfig = {
     // Allow build to complete even with ESLint errors for now
     ignoreDuringBuilds: true,
   },
-  // Webpack configuration to explicitly exclude any Prisma remnants
+  // Webpack configuration optimized for Supabase-only setup
   webpack: (config, { isServer }) => {
-    if (isServer) {
-      // Prevent any potential Prisma imports from being bundled
-      config.externals = config.externals || []
-      config.externals.push({
-        '@prisma/client': 'commonjs @prisma/client',
-        'prisma': 'commonjs prisma'
-      })
-    }
+    // No Prisma externals needed since we use Supabase exclusively
     return config
   }
 }
