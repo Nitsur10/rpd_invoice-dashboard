@@ -108,41 +108,42 @@ export function StatsCards({ dateFrom, dateTo }: StatsCardsProps) {
   ];
 
   return (
-    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-      {cards.map((card) => {
+    <div className="rpd-grid-responsive">
+      {cards.map((card, index) => {
         const Icon = card.icon;
         const TrendIcon = card.trendUp ? TrendingUp : TrendingDown;
         
         const cardStyle = {
           primary: {
-            background: 'linear-gradient(135deg, oklch(0.25 0.08 240 / 0.1), oklch(0.35 0.08 240 / 0.05))',
-            borderColor: 'oklch(0.25 0.08 240 / 0.2)',
-            iconBg: 'linear-gradient(135deg, oklch(0.25 0.08 240), oklch(0.35 0.08 240))'
+            background: 'linear-gradient(135deg, hsl(var(--rpd-navy-secondary)) 0%, hsl(var(--rpd-navy-tertiary)) 100%)',
+            borderColor: 'hsl(var(--border))',
+            iconBg: 'linear-gradient(135deg, hsl(220, 25%, 25%) 0%, hsl(220, 30%, 20%) 100%)'
           },
           success: {
-            background: 'linear-gradient(135deg, oklch(0.65 0.12 80 / 0.1), oklch(0.75 0.12 80 / 0.05))',
-            borderColor: 'oklch(0.65 0.12 80 / 0.2)', 
-            iconBg: 'linear-gradient(135deg, oklch(0.65 0.12 80), oklch(0.75 0.12 80))'
+            background: 'linear-gradient(135deg, hsl(var(--rpd-navy-secondary)) 0%, hsl(142, 25%, 8%) 100%)',
+            borderColor: 'hsl(142, 50%, 20%)', 
+            iconBg: 'linear-gradient(135deg, hsl(142, 76%, 36%) 0%, hsl(142, 84%, 29%) 100%)'
           },
           warning: {
-            background: 'linear-gradient(135deg, oklch(0.70 0.18 50 / 0.1), oklch(0.80 0.18 50 / 0.05))',
-            borderColor: 'oklch(0.70 0.18 50 / 0.2)',
-            iconBg: 'linear-gradient(135deg, oklch(0.70 0.18 50), oklch(0.80 0.18 50))'
+            background: 'linear-gradient(135deg, hsl(var(--rpd-navy-secondary)) 0%, hsl(38, 25%, 8%) 100%)',
+            borderColor: 'hsl(38, 50%, 20%)',
+            iconBg: 'linear-gradient(135deg, hsl(var(--rpd-gold-primary)) 0%, hsl(var(--rpd-gold-secondary)) 100%)'
           },
           danger: {
-            background: 'linear-gradient(135deg, oklch(0.60 0.20 20 / 0.1), oklch(0.70 0.20 20 / 0.05))',
-            borderColor: 'oklch(0.60 0.20 20 / 0.2)',
-            iconBg: 'linear-gradient(135deg, oklch(0.60 0.20 20), oklch(0.70 0.20 20))'
+            background: 'linear-gradient(135deg, hsl(var(--rpd-navy-secondary)) 0%, hsl(0, 25%, 8%) 100%)',
+            borderColor: 'hsl(0, 50%, 20%)',
+            iconBg: 'linear-gradient(135deg, hsl(0, 84%, 60%) 0%, hsl(0, 76%, 50%) 100%)'
           }
         };
         
         return (
           <Card 
             key={card.id}
-            className="glass-card glass-card-hover group cursor-pointer relative overflow-hidden border"
+            className="rpd-card-elevated group cursor-pointer relative overflow-hidden border hover:shadow-premium-lg transition-all duration-300 ease-out hover:scale-105 hover:-translate-y-1 animate-fade-in"
             style={{
               background: cardStyle[card.type].background,
-              borderColor: cardStyle[card.type].borderColor
+              borderColor: cardStyle[card.type].borderColor,
+              animationDelay: `${index * 0.1}s`
             }}
           >
             {/* Animated background gradient */}
@@ -152,7 +153,7 @@ export function StatsCards({ dateFrom, dateTo }: StatsCardsProps) {
             <div className="absolute inset-0 scale-0 bg-white/10 dark:bg-black/10 rounded-lg group-active:scale-100 transition-transform duration-200 ease-out" />
             
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 relative z-10">
-              <CardTitle className="text-sm font-medium text-slate-700 dark:text-slate-300">
+              <CardTitle className="text-sm font-semibold text-foreground">
                 {card.title}
               </CardTitle>
               <div className="p-2 rounded-lg shadow-md group-hover:scale-110 transition-all duration-300 ease-out floating"
@@ -164,7 +165,11 @@ export function StatsCards({ dateFrom, dateTo }: StatsCardsProps) {
             </CardHeader>
             <CardContent className="relative z-10">
               <div className="space-y-3">
-                <div className="text-2xl font-bold text-slate-900 dark:text-slate-100 group-hover:scale-105 transition-transform duration-300 ease-out">
+                <div className={`text-3xl font-bold group-hover:scale-105 transition-transform duration-300 ease-out tabular-nums ${
+                  card.title.toLowerCase().includes('amount') || card.value.includes('$') 
+                    ? 'rpd-text-gradient' 
+                    : 'text-foreground'
+                }`}>
                   {card.value}
                 </div>
                 
@@ -178,9 +183,9 @@ export function StatsCards({ dateFrom, dateTo }: StatsCardsProps) {
                     }`}
                   >
                     <TrendIcon className={`h-3 w-3 transition-all duration-300 ${card.trendUp ? 'group-hover:animate-bounce' : 'group-hover:animate-pulse'}`} />
-                    <span className="text-xs font-medium">{card.trend}</span>
+                    <span className={`text-xs font-medium ${card.trend.includes('$') ? 'rpd-text-gradient' : ''}`}>{card.trend}</span>
                   </Badge>
-                  <span className="text-xs text-slate-500 dark:text-slate-400">
+                  <span className="text-xs font-medium text-muted-foreground">
                     vs last month
                   </span>
                 </div>

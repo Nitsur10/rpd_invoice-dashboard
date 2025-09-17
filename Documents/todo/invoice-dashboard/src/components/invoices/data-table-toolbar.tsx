@@ -67,12 +67,14 @@ export function DataTableToolbar<TData>({
         <div className="relative flex-1 md:max-w-sm">
           <Search className="absolute left-2 top-2.5 h-4 w-4 text-slate-500 dark:text-slate-400" />
           <Input
+            id="search-invoices"
             placeholder="Search invoices..."
             value={(table.getColumn("vendorName")?.getFilterValue() as string) ?? ""}
             onChange={(event) =>
               table.getColumn("vendorName")?.setFilterValue(event.target.value)
             }
             className="pl-8"
+            aria-label="Search invoices by vendor name, invoice number, or description"
           />
         </div>
 

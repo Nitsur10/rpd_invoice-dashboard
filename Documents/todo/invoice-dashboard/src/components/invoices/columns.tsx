@@ -24,6 +24,7 @@ export const invoiceColumns: ColumnDef<Invoice>[] = [
         checked={table.getIsAllPageRowsSelected()}
         onChange={(e) => table.toggleAllPageRowsSelected(e.target.checked)}
         className="h-4 w-4 rounded border border-slate-300 dark:border-slate-600"
+        aria-label="Select all invoices on this page"
       />
     ),
     cell: ({ row }) => (
@@ -32,6 +33,7 @@ export const invoiceColumns: ColumnDef<Invoice>[] = [
         checked={row.getIsSelected()}
         onChange={(e) => row.toggleSelected(e.target.checked)}
         className="h-4 w-4 rounded border border-slate-300 dark:border-slate-600"
+        aria-label={`Select invoice ${row.original.invoiceNumber}`}
       />
     ),
     enableSorting: false,
@@ -64,6 +66,7 @@ export const invoiceColumns: ColumnDef<Invoice>[] = [
               size="sm"
               onClick={() => window.open(invoice.invoiceUrl, '_blank')}
               className="h-6 w-6 p-0"
+              aria-label={`Open invoice ${invoice.invoiceNumber} in new tab`}
             >
               <ExternalLink className="h-3 w-3" />
             </Button>
@@ -118,7 +121,9 @@ export const invoiceColumns: ColumnDef<Invoice>[] = [
       const amount = row.getValue("amount") as number
       return (
         <div className="text-right">
-          <div className="font-medium">{formatCurrency(amount)}</div>
+          <div className="font-semibold text-lg text-primary rpd-text-gradient">
+            {formatCurrency(amount)}
+          </div>
         </div>
       )
     },
@@ -247,7 +252,7 @@ export const invoiceColumns: ColumnDef<Invoice>[] = [
       return (
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
-            <Button variant="ghost" className="h-8 w-8 p-0">
+            <Button variant="ghost" className="h-8 w-8 p-0" aria-label={`Open actions menu for invoice ${invoice.invoiceNumber}`}>
               <span className="sr-only">Open menu</span>
               <MoreHorizontal className="h-4 w-4" />
             </Button>

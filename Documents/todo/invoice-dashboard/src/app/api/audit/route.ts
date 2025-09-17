@@ -55,9 +55,9 @@ async function getAuditHandler(request: NextRequest) {
       });
     }
 
-    // Build the query - using audit_logs table
+    // Build the query - using AuditLog table (correct case-sensitive name)
     let query_builder = supabaseAdmin
-      .from('audit_logs')
+      .from('AuditLog')
       .select(`
         id,
         entity_type,
@@ -113,7 +113,7 @@ async function getAuditHandler(request: NextRequest) {
     const { data, error, count } = await query_builder;
 
     if (error) {
-      // If audit_logs table doesn't exist, return empty results with correct structure
+      // If AuditLog table doesn't exist, return empty results with correct structure
       console.warn('Audit logs table not found or error:', error);
       
       const totalPages = 0;

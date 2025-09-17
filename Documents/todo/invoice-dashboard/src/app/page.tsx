@@ -4,15 +4,47 @@ import { useEffect, useState, memo } from 'react';
 import dynamic from 'next/dynamic';
 import { StatsCards } from '@/components/dashboard/stats-cards';
 // Charts (lazy client-only to avoid hydration cost)
-const CategoryBreakdown = dynamic(() => import('@/components/charts/category-breakdown').then(m => m.CategoryBreakdown), { ssr: false, loading: () => <div className="h-72 rounded bg-slate-100 dark:bg-slate-800 animate-pulse" /> });
-const TopVendors = dynamic(() => import('@/components/charts/top-vendors').then(m => m.TopVendors), { ssr: false, loading: () => <div className="h-72 rounded bg-slate-100 dark:bg-slate-800 animate-pulse" /> });
+const CategoryBreakdown = dynamic(() => import('@/components/charts/category-breakdown').then(m => m.CategoryBreakdown), { 
+  ssr: false, 
+  loading: () => (
+    <Card className="rpd-card-elevated">
+      <CardHeader className="pb-4">
+        <div className="flex items-center space-x-2">
+          <div className="w-3 h-3 bg-slate-200 dark:bg-slate-700 rounded-full animate-pulse"></div>
+          <div className="h-5 w-32 bg-slate-200 dark:bg-slate-700 rounded animate-pulse"></div>
+        </div>
+      </CardHeader>
+      <CardContent>
+        <div className="h-72 rounded bg-slate-100 dark:bg-slate-800 animate-pulse" />
+      </CardContent>
+    </Card>
+  )
+});
+const TopVendors = dynamic(() => import('@/components/charts/top-vendors').then(m => m.TopVendors), { 
+  ssr: false, 
+  loading: () => (
+    <Card className="rpd-card-elevated">
+      <CardHeader className="pb-4">
+        <div className="flex items-center space-x-2">
+          <div className="w-3 h-3 bg-slate-200 dark:bg-slate-700 rounded-full animate-pulse"></div>
+          <div className="h-5 w-24 bg-slate-200 dark:bg-slate-700 rounded animate-pulse"></div>
+        </div>
+      </CardHeader>
+      <CardContent>
+        <div className="h-72 rounded bg-slate-100 dark:bg-slate-800 animate-pulse" />
+      </CardContent>
+    </Card>
+  )
+});
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Label } from '@/components/ui/label';
+import { Input } from '@/components/ui/input';
 import { 
   Calendar,
-  Download,
-  Plus,
+  Filter,
   ArrowUpRight,
   TrendingUp,
   Users,
@@ -52,61 +84,98 @@ export default function Dashboard() {
   } : undefined;
 
   return (
-    <div className="space-y-8">
-      {/* Header Section */}
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center space-y-4 sm:space-y-0">
-        <div>
-          <h1 className="text-3xl font-bold" style={{color: 'oklch(0.25 0.08 240)'}}>
-            RPD Invoice Dashboard
-          </h1>
-          <p className="text-muted-foreground mt-1">
-            Welcome back! Here&apos;s what&apos;s happening with your invoices today.
-          </p>
-          <div className="flex items-center space-x-2 mt-2">
-            <Calendar className="h-4 w-4 text-slate-500" />
-            <Clock />
+    <div className="rpd-gradient-bg min-h-screen">
+      <div className="rpd-container rpd-section-padding space-y-8">
+        {/* Header Section */}
+        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center space-y-4 sm:space-y-0">
+          <div>
+            <h1 className="rpd-heading-xl rpd-text-gradient mb-2">
+              RPD Invoice Dashboard
+            </h1>
+            <p className="rpd-body-lg text-muted-foreground">
+              Welcome back! Here&apos;s what&apos;s happening with your invoices today.
+            </p>
+            <div className="flex items-center space-x-2 mt-3">
+              <Calendar className="h-4 w-4 text-primary" />
+              <Clock />
+            </div>
+          </div>
+        
+          <div className="flex space-x-3">
+            <Popover>
+              <PopoverTrigger asChild>
+                <Button variant="outline" size="sm" className="rpd-btn-secondary space-x-2 border hover:border-primary">
+                  <Filter className="h-4 w-4" />
+                  <span>Filter</span>
+                </Button>
+              </PopoverTrigger>
+            <PopoverContent className="w-80" align="end">
+              <div className="space-y-4">
+                <div className="space-y-2">
+                  <Label htmlFor="dateFrom">From Date</Label>
+                  <Input
+                    id="dateFrom"
+                    type="date"
+                    className="w-full"
+                    placeholder="Select start date"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="dateTo">To Date</Label>
+                  <Input
+                    id="dateTo"
+                    type="date"
+                    className="w-full"
+                    placeholder="Select end date"
+                  />
+                </div>
+                <div className="flex space-x-2">
+                  <Button size="sm" className="rpd-btn-primary flex-1">
+                    Apply Filter
+                  </Button>
+                  <Button variant="outline" size="sm" className="rpd-btn-secondary flex-1">
+                    Clear
+                  </Button>
+                </div>
+              </div>
+            </PopoverContent>
+            </Popover>
           </div>
         </div>
-        
-        <div className="flex space-x-3">
-          <Button variant="outline" size="sm" className="space-x-2">
-            <Download className="h-4 w-4" />
-            <span>Export</span>
-          </Button>
-          <Button size="sm" className="space-x-2 shadow-lg text-white" 
-                  style={{
-                    background: 'oklch(0.25 0.08 240)',
-                    boxShadow: '0 4px 6px -1px oklch(0.25 0.08 240 / 0.3)'
-                  }}>
-            <Plus className="h-4 w-4" />
-            <span>Add Invoice</span>
-          </Button>
-        </div>
-      </div>
 
-      {/* Stats Cards */}
-      {statsQ.isLoading && (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-          {Array.from({ length: 4 }).map((_, i) => (
-            <div key={i} className="h-28 rounded-lg bg-slate-100 dark:bg-slate-800 animate-pulse" />
-          ))}
-        </div>
-      )}
-      {statsQ.error && (
-        <div className="text-sm text-red-600 dark:text-red-400">Failed to load dashboard stats.</div>
-      )}
-      {mappedStats && <StatsCards stats={mappedStats} />}
+        {/* Stats Cards */}
+        {statsQ.isLoading && (
+          <div className="rpd-grid-responsive">
+            {Array.from({ length: 4 }).map((_, i) => (
+              <div key={i} className="rpd-card h-32 rpd-skeleton" />
+            ))}
+          </div>
+        )}
+        {statsQ.error && (
+          <div className="rpd-card-elevated p-6 border-red-800/30">
+            <div className="flex items-center space-x-2">
+              <Activity className="h-5 w-5 text-red-400" />
+              <span className="rpd-body text-red-400">Failed to load dashboard stats.</span>
+            </div>
+          </div>
+        )}
+        {mappedStats && <StatsCards stats={mappedStats} />}
 
-      {/* Charts Grid (replaces quick actions, recent activity, and bottom cards) */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <CategoryBreakdown 
-          data={statsQ.data?.breakdowns.categories ?? []}
-          isLoading={statsQ.isLoading}
-        />
-        <TopVendors 
-          data={statsQ.data?.breakdowns.topVendors ?? []}
-          isLoading={statsQ.isLoading}
-        />
+        {/* Charts Grid */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+          <div className="animate-fade-in">
+            <CategoryBreakdown 
+              data={statsQ.data?.breakdowns.categories ?? []}
+              isLoading={statsQ.isLoading}
+            />
+          </div>
+          <div className="animate-fade-in" style={{animationDelay: '0.1s'}}>
+            <TopVendors 
+              data={statsQ.data?.breakdowns.topVendors ?? []}
+              isLoading={statsQ.isLoading}
+            />
+          </div>
+        </div>
       </div>
     </div>
   );

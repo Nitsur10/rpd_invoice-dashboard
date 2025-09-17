@@ -69,14 +69,12 @@ async function getStatsHandler(request: NextRequest) {
       return NextResponse.json(response);
     }
 
-    // Build base query (align table name)
-    // Resolve table name with env override and fallback
-    const primaryTable = process.env.SUPABASE_INVOICES_TABLE || 'invoices';
-    const fallbackTable = primaryTable === 'invoices' ? 'Invoice' : 'invoices';
-
-    // Only select fields needed for stats to minimize payload
-    const selectCols = 'id,total,payment_status,category,supplier_name,created_at,updated_at,invoice_date';
-    let query_builder = supabaseAdmin.from(primaryTable).select(selectCols);
+    // Build base query using actual table structure
+    const tableName = 'Invoice'; // The actual table name
+    
+    // Select actual columns that exist
+    const selectCols = 'invoice_number,total,amount_due,supplier_name,created_at,updated_at,invoice_date,due_date,subtotal,gst_total';
+    let query_builder = supabaseAdmin.from(tableName).select(selectCols);
 
     if (effectiveFrom) {
       // Use invoice_date if present, otherwise created_at
@@ -88,17 +86,6 @@ async function getStatsHandler(request: NextRequest) {
     }
 
     let { data: invoices, error } = await query_builder;
-
-    // Fallback to alternate table name if table not found
-    if (error && (error as any).code === 'PGRST205') {
-      const fb = supabaseAdmin
-        .from(fallbackTable)
-        .select(selectCols)
-        .gte('invoice_date', effectiveFrom);
-      const fbRes = await fb;
-      invoices = fbRes.data as any[];
-      error = fbRes.error as any;
-    }
 
     if (error) {
       console.warn('Database error in /api/stats, returning empty stats:', error);
@@ -128,11 +115,22 @@ async function getStatsHandler(request: NextRequest) {
 
     const invoiceList = invoices || [];
 
+    // Helper function to determine payment status from data
+    const getPaymentStatus = (invoice: any) => {
+      const amountDue = invoice.amount_due || 0;
+      if (amountDue === 0) return 'paid';
+      
+      const dueDate = invoice.due_date;
+      if (dueDate && new Date(dueDate) < new Date()) return 'overdue';
+      
+      return 'pending';
+    };
+
     // Calculate overview stats
     const totalInvoices = invoiceList.length;
-    const pendingInvoices = invoiceList.filter(i => i.payment_status === 'pending');
-    const overdueInvoices = invoiceList.filter(i => i.payment_status === 'overdue');
-    const paidInvoices = invoiceList.filter(i => i.payment_status === 'paid');
+    const pendingInvoices = invoiceList.filter(i => getPaymentStatus(i) === 'pending');
+    const overdueInvoices = invoiceList.filter(i => getPaymentStatus(i) === 'overdue');
+    const paidInvoices = invoiceList.filter(i => getPaymentStatus(i) === 'paid');
 
     const totalAmount = invoiceList.reduce((sum, i) => sum + (i.total || 0), 0);
     const pendingAmount = pendingInvoices.reduce((sum, i) => sum + (i.total || 0), 0);
@@ -143,10 +141,10 @@ async function getStatsHandler(request: NextRequest) {
     const invoiceTrend = totalInvoices > 0 ? 15.2 : 0;
     const amountTrend = totalAmount > 0 ? 18.2 : 0;
 
-    // Processing status breakdown
+    // Processing status breakdown (based on payment status)
     const processingStatus = Object.entries(
       invoiceList.reduce((acc: Record<string, { count: number; amount: number }>, invoice: any) => {
-        const status = invoice.processing_status || 'unknown';
+        const status = getPaymentStatus(invoice);
         if (!acc[status]) {
           acc[status] = { count: 0, amount: 0 };
         }
@@ -160,10 +158,10 @@ async function getStatsHandler(request: NextRequest) {
       amount: data.amount,
     }));
 
-    // Categories breakdown
+    // Categories breakdown (use source field since no category field)
     const categories = Object.entries(
       invoiceList.reduce((acc: Record<string, { count: number; amount: number }>, invoice: any) => {
-        const category = invoice.category || 'Uncategorized';
+        const category = invoice.source || 'Uncategorized';
         if (!acc[category]) {
           acc[category] = { count: 0, amount: 0 };
         }
@@ -202,10 +200,10 @@ async function getStatsHandler(request: NextRequest) {
       .sort((a, b) => new Date(b.updated_at || b.created_at).getTime() - new Date(a.updated_at || a.created_at).getTime())
       .slice(0, 10)
       .map(invoice => ({
-        id: `activity-${invoice.id}`,
+        id: `activity-${invoice.invoice_number}`,
         action: 'invoice_updated',
-        entityId: invoice.id,
-        changes: { status: invoice.payment_status },
+        entityId: invoice.invoice_number,
+        changes: { status: getPaymentStatus(invoice) },
         createdAt: invoice.updated_at || invoice.created_at,
         user: {
           firstName: 'System',

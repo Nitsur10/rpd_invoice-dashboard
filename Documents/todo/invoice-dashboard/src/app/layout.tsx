@@ -30,10 +30,12 @@ export default function RootLayout({
   return (
     <html lang="en" suppressHydrationWarning>
       <body
-        className={`${inter.variable} ${jetbrainsMono.variable} font-sans antialiased dashboard-bg`}
+        className={`${inter.variable} ${jetbrainsMono.variable} font-sans antialiased dashboard-bg relative`}
       >
+        {/* Subtle paper texture overlay */}
+        <div className="fixed inset-0 pointer-events-none paper-texture" aria-hidden="true" />
         <Providers>
-          <div className="flex min-h-screen">
+          <div className="flex min-h-screen relative z-10">
             {/* Skip to main content link for accessibility */}
             <a 
               href="#main-content" 
