@@ -3,6 +3,7 @@ const path = require('path')
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   serverExternalPackages: ['@supabase/supabase-js'],
+  // Force webpack build instead of Turbopack to avoid Prisma issues
   typescript: {
     // Allow build to complete even with type errors for deployment
     ignoreBuildErrors: true,
