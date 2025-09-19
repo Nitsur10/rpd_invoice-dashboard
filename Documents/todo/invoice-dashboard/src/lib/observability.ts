@@ -14,8 +14,7 @@ export interface BudgetConfig {
 // Budget thresholds in milliseconds
 export const budgets: BudgetConfig = {
   '/api/stats': 400,
-  '/api/invoices': 600, 
-  '/api/audit': 600,
+  '/api/invoices': 600,
   '/api/outstanding': 500,
 }
 

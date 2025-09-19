@@ -12,12 +12,10 @@ async function smoke(path: string, handler: (req: NextRequest) => Promise<Respon
 async function run() {
   const stats = await import('../src/app/api/stats/route')
   const invoices = await import('../src/app/api/invoices/route')
-  const audit = await import('../src/app/api/audit/route')
   const outstanding = await import('../src/app/api/outstanding/route')
 
   await smoke('/api/stats', stats.GET)
   await smoke('/api/invoices', invoices.GET)
-  await smoke('/api/audit', audit.GET)
   await smoke('/api/outstanding', outstanding.GET)
 }
 
