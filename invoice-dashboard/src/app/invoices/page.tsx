@@ -29,9 +29,10 @@ import {
   ExternalLink
 } from "lucide-react"
 
-import { Invoice, PaymentStatus } from "@/lib/types"
+import { Invoice } from "@/lib/types"
 import { formatCurrency } from "@/lib/utils"
-import { fetchInvoices, InvoiceFilters } from "@/lib/api-client"
+import { fetchInvoices } from "@/lib/api-client"
+import { determinePaymentStatus } from "@/lib/data"
 
 interface DateFilter {
   startDate?: Date
@@ -169,13 +170,35 @@ export default function InvoicesPage() {
 
   // Statistics from the current filtered dataset using snake_case field names
   const stats = React.useMemo(() => {
-    return {
-      total: filteredInvoices.length,
-      totalAmount: filteredInvoices.reduce((sum, inv) => sum + (inv.total || 0), 0),
-      pending: filteredInvoices.filter(inv => inv.payment_status === 'pending').length,
-      paid: filteredInvoices.filter(inv => inv.payment_status === 'paid').length,
-      overdue: filteredInvoices.filter(inv => inv.payment_status === 'overdue').length,
-    }
+    return filteredInvoices.reduce(
+      (acc, invoice) => {
+        acc.total += 1
+        acc.totalAmount += invoice.total || 0
+
+        const status = determinePaymentStatus(invoice)
+
+        switch (status) {
+          case 'OVERDUE':
+            acc.overdue += 1
+            break
+          case 'PAID':
+            acc.paid += 1
+            break
+          default:
+            acc.pending += 1
+            break
+        }
+
+        return acc
+      },
+      {
+        total: 0,
+        totalAmount: 0,
+        pending: 0,
+        paid: 0,
+        overdue: 0,
+      }
+    )
   }, [filteredInvoices])
 
   const handleRowAction = (action: string, invoice: Invoice) => {
