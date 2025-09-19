@@ -5,6 +5,10 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { StatsCards } from '@/components/dashboard/stats-cards';
+import {
+  DashboardStatsProvider,
+  type DashboardStatsContextValue,
+} from '@/components/dashboard/dashboard-stats-provider';
 import { RecentActivity } from '@/components/dashboard/recent-activity';
 import { ErrorBoundary } from '@/components/ui/error-boundary';
 import { mockDashboardStats, mockInvoiceData, mockRecentActivity } from '@/lib/sample-data';
@@ -30,6 +34,20 @@ interface TestResult {
   message: string;
   link?: string;
 }
+
+const noopSetData: DashboardStatsContextValue['setData'] = () => undefined;
+const noopSetParams: DashboardStatsContextValue['setParams'] = () => undefined;
+
+const mockStatsProviderValue: DashboardStatsContextValue = {
+  data: mockDashboardStats,
+  setData: noopSetData,
+  isLoading: false,
+  isError: false,
+  error: null,
+  refetch: () => undefined,
+  params: {},
+  setParams: noopSetParams,
+};
 
 export default function TestPage() {
   const [testResults, setTestResults] = useState<TestResult[]>([
@@ -280,14 +298,16 @@ export default function TestPage() {
       {/* Sample Components Preview */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <ErrorBoundary context="Stats Cards" level="component">
-          <Card className="glass-card">
-            <CardHeader>
-              <CardTitle>Sample Stats Cards</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <StatsCards stats={mockDashboardStats} />
-            </CardContent>
-          </Card>
+          <DashboardStatsProvider value={mockStatsProviderValue}>
+            <Card className="glass-card">
+              <CardHeader>
+                <CardTitle>Sample Stats Cards</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <StatsCards stats={mockDashboardStats} />
+              </CardContent>
+            </Card>
+          </DashboardStatsProvider>
         </ErrorBoundary>
 
         <ErrorBoundary context="Recent Activity" level="component">
