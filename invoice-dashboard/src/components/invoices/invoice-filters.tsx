@@ -254,14 +254,17 @@ export function InvoiceFilters({ invoices, onFilterChange }: InvoiceFiltersProps
                   </Button>
                 </PopoverTrigger>
                 <PopoverContent className="w-auto p-0" align="start">
-                  <DatePicker
-                    selected={startDate}
-                    onChange={(date) => setStartDate(date)}
-                    inline
-                    showYearDropdown
-                    showMonthDropdown
-                    dropdownMode="select"
-                  />
+                  <div className="calendar-surface">
+                    <DatePicker
+                      selected={startDate}
+                      onChange={(date) => setStartDate(date)}
+                      inline
+                      showYearDropdown
+                      showMonthDropdown
+                      dropdownMode="select"
+                      calendarClassName="invoice-date-picker"
+                    />
+                  </div>
                 </PopoverContent>
               </Popover>
             </div>
@@ -276,15 +279,18 @@ export function InvoiceFilters({ invoices, onFilterChange }: InvoiceFiltersProps
                   </Button>
                 </PopoverTrigger>
                 <PopoverContent className="w-auto p-0" align="start">
-                  <DatePicker
-                    selected={endDate}
-                    onChange={(date) => setEndDate(date)}
-                    inline
-                    showYearDropdown
-                    showMonthDropdown
-                    dropdownMode="select"
-                    minDate={startDate || undefined}
-                  />
+                  <div className="calendar-surface">
+                    <DatePicker
+                      selected={endDate}
+                      onChange={(date) => setEndDate(date)}
+                      inline
+                      showYearDropdown
+                      showMonthDropdown
+                      dropdownMode="select"
+                      minDate={startDate || undefined}
+                      calendarClassName="invoice-date-picker"
+                    />
+                  </div>
                 </PopoverContent>
               </Popover>
             </div>
