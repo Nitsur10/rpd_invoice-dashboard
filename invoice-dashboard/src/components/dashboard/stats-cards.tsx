@@ -2,8 +2,7 @@
 
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { cardVariants, iconVariants, badgeVariants } from '@/lib/variants';
-import { cn } from '@/lib/utils';
+import { DashboardStatsContextValue, useDashboardStats } from '@/components/dashboard/dashboard-stats-provider';
 import { 
   DollarSign, 
   FileText, 
@@ -16,10 +15,50 @@ import {
 import { DashboardStats } from '@/lib/types';
 
 interface StatsCardsProps {
-  stats: DashboardStats;
+  stats?: DashboardStats;
 }
 
-export function StatsCards({ stats }: StatsCardsProps) {
+export function StatsCards({ stats: statsProp }: StatsCardsProps) {
+  let contextValue: DashboardStatsContextValue | null = null;
+  let providerError: unknown = null;
+
+  try {
+    contextValue = useDashboardStats();
+  } catch (error) {
+    providerError = error;
+  }
+
+  if (contextValue?.isLoading && !contextValue.data) {
+    return (
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+        {Array.from({ length: 4 }).map((_, index) => (
+          <Card key={index} className="animate-pulse">
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <div className="h-4 bg-slate-200 dark:bg-slate-700 rounded w-24" />
+              <div className="h-8 w-8 bg-slate-200 dark:bg-slate-700 rounded" />
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-3">
+                <div className="h-8 bg-slate-200 dark:bg-slate-700 rounded w-16" />
+                <div className="h-6 bg-slate-200 dark:bg-slate-700 rounded w-20" />
+              </div>
+            </CardContent>
+          </Card>
+        ))}
+      </div>
+    );
+  }
+
+  if (contextValue?.isError && !contextValue.data) {
+    throw providerError ?? new Error('Dashboard statistics failed to load.');
+  }
+
+  const stats = contextValue?.data ?? statsProp;
+
+  if (!stats) {
+    throw providerError ?? new Error('StatsCards requires dashboard statistics via props or DashboardStatsProvider.');
+  }
+
   // Calculate simple trend indicators based on current data
   const getTrend = (current: number, type: string) => {
     if (current === 0) return { trend: '0%', trendUp: false };
