@@ -1,10 +1,19 @@
 import { test, expect } from '@playwright/test';
+import { ensureTestUser, loginViaUI } from './test-utils';
+
+test.beforeAll(async () => {
+  await ensureTestUser();
+});
+
+test.beforeEach(async ({ page }) => {
+  await loginViaUI(page);
+});
 
 test.describe('Accessibility Improvements Verification', () => {
   test('should have proper labels for all inputs on invoices page', async ({ page }) => {
     await page.goto('/invoices');
     await page.waitForLoadState('networkidle');
-    await expect(page.getByRole('heading', { level: 1, name: /Invoice Management/i })).toBeVisible();
+    await expect(page.getByRole('heading', { level: 1, name: /RPD Invoices/i })).toBeVisible();
 
     // Check search input has proper label
     const searchInput = page.getByRole('textbox', { name: /Search invoices by vendor/i });
@@ -74,11 +83,10 @@ test.describe('Accessibility Improvements Verification', () => {
   test('should have proper heading hierarchy', async ({ page }) => {
     const pages = [
       { url: '/', expected: /RPD Invoice Dashboard/i },
-      { url: '/invoices', expected: /Invoice Management/i },
-      { url: '/kanban', expected: /Kanban Board/i },
+      { url: '/invoices', expected: /RPD Invoices/i },
+      { url: '/kanban', expected: /RPD Kanban Board/i },
       { url: '/analytics', expected: /Analytics Dashboard/i },
       { url: '/settings', expected: /Settings/i },
-      { url: '/status', expected: /API Status/i },
     ];
 
     for (const pageInfo of pages) {

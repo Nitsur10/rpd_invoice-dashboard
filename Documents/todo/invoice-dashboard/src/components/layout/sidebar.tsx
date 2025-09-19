@@ -12,7 +12,6 @@ import {
   BarChart3,
   Settings,
   TrendingUp,
-  Activity,
 } from 'lucide-react';
 
 interface SidebarProps {
@@ -36,12 +35,6 @@ const getNavigation = (invoiceCount?: number) => [
     name: 'Kanban Board',
     href: '/kanban',
     icon: Kanban,
-    badge: null,
-  },
-  {
-    name: 'API Status',
-    href: '/status',
-    icon: Activity,
     badge: null,
   },
   {

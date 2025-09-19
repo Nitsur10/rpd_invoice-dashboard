@@ -1,4 +1,13 @@
 import { test, expect } from '@playwright/test';
+import { ensureTestUser, loginViaUI } from './test-utils';
+
+test.beforeAll(async () => {
+  await ensureTestUser();
+});
+
+test.beforeEach(async ({ page }) => {
+  await loginViaUI(page);
+});
 
 test.describe('Invoices Page', () => {
   test('should load invoices page with data table', async ({ page }) => {
@@ -6,7 +15,7 @@ test.describe('Invoices Page', () => {
     await page.waitForLoadState('networkidle');
     
     // Check page heading
-    await expect(page.getByRole('heading', { level: 1, name: /Invoice Management/i })).toBeVisible();
+    await expect(page.getByRole('heading', { level: 1, name: /RPD Invoices/i })).toBeVisible();
 
     // Check for filters section
     await expect(page.getByRole('button', { name: /Filter/i })).toBeVisible();

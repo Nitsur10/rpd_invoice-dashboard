@@ -1,0 +1,16 @@
+{
+  "totals": {
+    "totalInvoices": 178,
+    "pending": 56,
+    "overdue": 12,
+    "paid": 110,
+    "totalAmount": 537860.45,
+    "pendingAmount": 198540.10,
+    "overdueAmount": 48210.25,
+    "paidAmount": 291110.10
+  },
+  "trends": {
+    "invoiceDelta": 8.7,
+    "amountDelta": 12.4
+  }
+}

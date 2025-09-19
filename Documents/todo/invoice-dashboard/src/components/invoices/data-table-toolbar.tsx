@@ -6,101 +6,70 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { DataTableViewOptions } from "@/components/invoices/data-table-view-options"
 import { DataTableFacetedFilter } from "@/components/invoices/data-table-faceted-filter"
-import { Search, FilterX, Download, Plus, RefreshCw } from "lucide-react"
-import { PaymentStatus } from "@/lib/types"
+import { Search } from "lucide-react"
+import type { InvoiceFacetsResponse } from "@/lib/api/invoices"
+import { useInvoiceFilters } from "@/hooks/use-invoices-filters"
 
 interface DataTableToolbarProps<TData> {
   table: Table<TData>
+  facets?: InvoiceFacetsResponse['facets']
 }
-
-// Filter options for invoice-specific fields
-const paymentStatuses = [
-  {
-    value: "pending",
-    label: "Pending",
-    icon: "🟡",
-  },
-  {
-    value: "paid", 
-    label: "Paid",
-    icon: "🟢",
-  },
-  {
-    value: "overdue",
-    label: "Overdue", 
-    icon: "🔴",
-  },
-]
-
-const categories = [
-  {
-    value: "Construction",
-    label: "Construction",
-    icon: "🏗️",
-  },
-  {
-    value: "Utilities",
-    label: "Utilities",
-    icon: "⚡", 
-  },
-  {
-    value: "Materials",
-    label: "Materials",
-    icon: "📦",
-  },
-  {
-    value: "Professional Services",
-    label: "Professional Services",
-    icon: "💼",
-  },
-]
 
 export function DataTableToolbar<TData>({
   table,
+  facets,
 }: DataTableToolbarProps<TData>) {
-  const isFiltered = table.getState().columnFilters.length > 0
+  const { filters, setSearch, reset } = useInvoiceFilters()
+  const isFiltered = table.getState().columnFilters.length > 0 || Boolean(filters.search)
 
   return (
-    <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
-      <div className="flex flex-1 flex-col gap-4 md:flex-row md:items-center md:space-x-4">
-        {/* Search Input */}
-        <div className="relative flex-1 md:max-w-sm">
-          <Search className="absolute left-2 top-2.5 h-4 w-4 text-slate-500 dark:text-slate-400" />
+    <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+      <div className="flex flex-1 flex-wrap items-center gap-3">
+        <div className="relative w-full max-w-sm">
+          <Search className="absolute left-2 top-2.5 h-4 w-4 text-slate-400" />
           <Input
             id="search-invoices"
             placeholder="Search invoices..."
-            value={(table.getColumn("vendorName")?.getFilterValue() as string) ?? ""}
-            onChange={(event) =>
-              table.getColumn("vendorName")?.setFilterValue(event.target.value)
-            }
+            value={filters.search}
+            onChange={(event) => {
+              setSearch(event.target.value)
+            }}
             className="pl-8"
             aria-label="Search invoices by vendor name, invoice number, or description"
           />
         </div>
 
-        {/* Faceted Filters */}
         <div className="flex flex-wrap gap-2">
           {table.getColumn("status") && (
             <DataTableFacetedFilter
               column={table.getColumn("status")}
               title="Status"
-              options={paymentStatuses}
+              options={(facets?.statuses ?? []).map((status) => ({
+                value: status.value,
+                label: status.value.charAt(0).toUpperCase() + status.value.slice(1),
+              }))}
             />
           )}
           {table.getColumn("category") && (
             <DataTableFacetedFilter
               column={table.getColumn("category")}
               title="Category"
-              options={categories}
+              options={(facets?.categories ?? []).map((category) => ({
+                value: category.value,
+                label: category.value,
+              }))}
             />
           )}
         </div>
 
-        {/* Clear Filters */}
         {isFiltered && (
           <Button
-            variant="ghost"
-            onClick={() => table.resetColumnFilters()}
+            variant="secondary"
+            onClick={() => {
+              table.resetColumnFilters()
+              table.resetColumnVisibility()
+              reset()
+            }}
             className="h-8 px-2 lg:px-3"
           >
             Clear filters
@@ -109,36 +78,7 @@ export function DataTableToolbar<TData>({
         )}
       </div>
 
-      {/* Action Buttons */}
-      <div className="flex items-center gap-2">
-        <Button
-          variant="outline"
-          size="sm"
-          className="ml-auto h-8"
-        >
-          <RefreshCw className="mr-2 h-4 w-4" />
-          Refresh
-        </Button>
-        
-        <Button
-          variant="outline"
-          size="sm"
-          className="h-8"
-        >
-          <Download className="mr-2 h-4 w-4" />
-          Export
-        </Button>
-        
-        <Button
-          size="sm"
-          className="h-8"
-        >
-          <Plus className="mr-2 h-4 w-4" />
-          Add Invoice
-        </Button>
-        
-        <DataTableViewOptions table={table} />
-      </div>
+      <DataTableViewOptions table={table} />
     </div>
   )
 }

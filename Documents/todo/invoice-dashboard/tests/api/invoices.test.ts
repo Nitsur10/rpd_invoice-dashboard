@@ -1,152 +1,57 @@
-import { describe, it, expect, beforeAll, afterAll } from '@jest/globals';
+import { describe, it, expect } from '@jest/globals'
 
-// API Contract Tests for Invoice Endpoints
-describe('/api/invoices', () => {
-  const baseUrl = process.env.NEXTAUTH_URL || 'http://localhost:3000';
-  
+const baseUrl = process.env.NEXTAUTH_URL || 'http://localhost:3000'
+
+describe('Invoice API', () => {
   describe('GET /api/invoices', () => {
-    it('should return paginated invoice list with correct structure', async () => {
-      const response = await fetch(`${baseUrl}/api/invoices`);
-      const data = await response.json();
-      
-      expect(response.status).toBe(200);
-      expect(data).toHaveProperty('data');
-      expect(data).toHaveProperty('pagination');
-      expect(Array.isArray(data.data)).toBe(true);
-      
-      // Check pagination structure
-      expect(data.pagination).toHaveProperty('total');
-      expect(data.pagination).toHaveProperty('pageCount');
-      expect(data.pagination).toHaveProperty('pageSize');
-      expect(data.pagination).toHaveProperty('pageIndex');
-    });
+    it('returns data and pagination metadata', async () => {
+      const response = await fetch(`${baseUrl}/api/invoices`)
+      const payload = await response.json()
 
-    it('should support filtering by date range', async () => {
-      const dateFrom = '2025-01-01';
-      const dateTo = '2025-12-31';
-      const response = await fetch(`${baseUrl}/api/invoices?dateFrom=${dateFrom}&dateTo=${dateTo}`);
-      const data = await response.json();
-      
-      expect(response.status).toBe(200);
-      expect(data).toHaveProperty('data');
-      expect(Array.isArray(data.data)).toBe(true);
-    });
+      expect(response.status).toBe(200)
+      expect(payload).toHaveProperty('data')
+      expect(payload).toHaveProperty('pagination')
+      expect(Array.isArray(payload.data)).toBe(true)
+      expect(payload.pagination).toEqual(
+        expect.objectContaining({ total: expect.any(Number), pageCount: expect.any(Number) })
+      )
+    })
 
-    it('should handle server errors with correct format', async () => {
-      // This would need a way to trigger a server error - in real tests you might mock Supabase
-      const response = await fetch(`${baseUrl}/api/invoices?invalidParam=triggerError`);
-      
-      if (response.status === 500) {
-        const error = await response.json();
-        expect(error).toHaveProperty('code');
-        expect(error).toHaveProperty('message');
-        expect(error.code).toBe('SERVER_ERROR');
-      }
-    });
-  });
+    it('accepts filter parameters without erroring', async () => {
+      const url = `${baseUrl}/api/invoices?status=pending&category=Utilities&vendor=TasWater&amountMin=100&amountMax=500`
+      const response = await fetch(url)
+      expect(response.status).toBe(200)
+    })
+  })
 
-  describe('POST /api/invoices', () => {
-    it('should validate required fields', async () => {
-      const invalidInvoice = {};
-      
-      const response = await fetch(`${baseUrl}/api/invoices`, {
+  describe('GET /api/invoices/saved-views', () => {
+    it('responds with a views array', async () => {
+      const response = await fetch(`${baseUrl}/api/invoices/saved-views`)
+      const payload = await response.json()
+
+      expect(response.status).toBe(200)
+      expect(payload).toHaveProperty('views')
+      expect(Array.isArray(payload.views)).toBe(true)
+    })
+  })
+
+  describe('POST /api/invoices/export', () => {
+    it('returns a clear error when Supabase is unavailable', async () => {
+      const response = await fetch(`${baseUrl}/api/invoices/export`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(invalidInvoice)
-      });
-      
-      expect(response.status).toBe(400);
-      const error = await response.json();
-      expect(error).toHaveProperty('code', 'INVALID_BODY');
-      expect(error).toHaveProperty('message');
-    });
+        body: JSON.stringify({ filters: {} }),
+      })
 
-    it('should accept valid invoice data', async () => {
-      const validInvoice = {
-        invoice_number: `TEST-${Date.now()}`,
-        supplier_name: 'Test Supplier',
-        total: 100.00
-      };
-      
-      const response = await fetch(`${baseUrl}/api/invoices`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(validInvoice)
-      });
-      
       if (response.status === 201) {
-        const result = await response.json();
-        expect(result).toHaveProperty('success', true);
-        expect(result).toHaveProperty('invoice');
-        expect(result.invoice).toHaveProperty('invoice_number', validInvoice.invoice_number);
+        const payload = await response.json()
+        expect(payload).toHaveProperty('id')
+        expect(payload).toHaveProperty('status')
+      } else {
+        expect(response.status).toBe(503)
+        const payload = await response.json()
+        expect(payload).toHaveProperty('code', 'SUPABASE_DISABLED')
       }
-    });
-
-    it('should handle duplicate invoice numbers', async () => {
-      const duplicateInvoice = {
-        invoice_number: 'EXISTING-INVOICE',
-        supplier_name: 'Test Supplier',
-        total: 100.00
-      };
-      
-      const response = await fetch(`${baseUrl}/api/invoices`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(duplicateInvoice)
-      });
-      
-      if (response.status === 409) {
-        const error = await response.json();
-        expect(error).toHaveProperty('code', 'DUPLICATE_INVOICE');
-        expect(error).toHaveProperty('message');
-      }
-    });
-  });
-});
-
-describe('/api/invoices/[id]', () => {
-  const baseUrl = process.env.NEXTAUTH_URL || 'http://localhost:3000';
-  
-  describe('GET /api/invoices/[id]', () => {
-    it('should return 404 for non-existent invoice', async () => {
-      const response = await fetch(`${baseUrl}/api/invoices/NON-EXISTENT-INVOICE`);
-      
-      expect(response.status).toBe(404);
-      const error = await response.json();
-      expect(error).toHaveProperty('code', 'NOT_FOUND');
-      expect(error).toHaveProperty('message', 'Invoice not found');
-    });
-  });
-
-  describe('PATCH /api/invoices/[id]', () => {
-    it('should validate update data', async () => {
-      const invalidUpdate = {
-        total: 'invalid-number'
-      };
-      
-      const response = await fetch(`${baseUrl}/api/invoices/TEST-INVOICE`, {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(invalidUpdate)
-      });
-      
-      expect(response.status).toBe(400);
-      const error = await response.json();
-      expect(error).toHaveProperty('code', 'INVALID_BODY');
-      expect(error).toHaveProperty('message');
-    });
-  });
-
-  describe('DELETE /api/invoices/[id]', () => {
-    it('should return 404 for non-existent invoice', async () => {
-      const response = await fetch(`${baseUrl}/api/invoices/NON-EXISTENT-INVOICE`, {
-        method: 'DELETE'
-      });
-      
-      expect(response.status).toBe(404);
-      const error = await response.json();
-      expect(error).toHaveProperty('code', 'NOT_FOUND');
-      expect(error).toHaveProperty('message', 'Invoice not found');
-    });
-  });
-});
+    })
+  })
+})

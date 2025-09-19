@@ -1,4 +1,13 @@
 import { test, expect } from '@playwright/test';
+import { ensureTestUser, loginViaUI } from './test-utils';
+
+test.beforeAll(async () => {
+  await ensureTestUser();
+});
+
+test.beforeEach(async ({ page }) => {
+  await loginViaUI(page);
+});
 
 test.describe('Dashboard', () => {
   test('should load dashboard page', async ({ page }) => {
@@ -25,7 +34,7 @@ test.describe('Dashboard', () => {
     
     // Verify we're on invoices page
     await expect(page).toHaveURL('/invoices');
-    await expect(page.getByRole('heading', { level: 1, name: /Invoice Management/i })).toBeVisible();
+    await expect(page.getByRole('heading', { level: 1, name: /RPD Invoices/i })).toBeVisible();
   });
 
   test('should navigate to kanban page', async ({ page }) => {
@@ -36,7 +45,7 @@ test.describe('Dashboard', () => {
     
     // Verify we're on kanban page
     await expect(page).toHaveURL('/kanban');
-    await expect(page.getByRole('heading', { level: 1, name: /Kanban Board/i })).toBeVisible();
+    await expect(page.getByRole('heading', { level: 1, name: /RPD Kanban Board/i })).toBeVisible();
   });
 
   test('should navigate to analytics page', async ({ page }) => {
@@ -61,14 +70,4 @@ test.describe('Dashboard', () => {
     await expect(page.getByRole('heading', { level: 1, name: /Settings/i })).toBeVisible();
   });
 
-  test('should navigate to status page', async ({ page }) => {
-    await page.goto('/');
-    
-    // Click on status navigation
-    await page.getByRole('link', { name: /API Status/i }).click();
-    
-    // Verify we're on status page
-    await expect(page).toHaveURL('/status');
-    await expect(page.getByRole('heading', { level: 1, name: /API Status/i })).toBeVisible();
-  });
 });

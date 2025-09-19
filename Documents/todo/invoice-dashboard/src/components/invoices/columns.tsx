@@ -11,7 +11,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
-import { ArrowUpDown, MoreHorizontal, Eye, ExternalLink } from "lucide-react"
+import { ArrowUpDown, MoreHorizontal, ExternalLink } from "lucide-react"
 import { Invoice } from "@/lib/types"
 import { formatCurrency } from "@/lib/utils"
 
@@ -187,9 +187,14 @@ export const invoiceColumns: ColumnDef<Invoice>[] = [
       )
     },
     cell: ({ row }) => {
-      const category = row.getValue("category") as string
+      const category = row.getValue("category") as string | undefined
+
+      if (!category) {
+        return <span className="text-sm italic text-slate-400">Uncategorised</span>
+      }
+
       return (
-        <Badge variant="outline" className="font-normal">
+        <Badge variant="secondary" className="border-slate-200 bg-slate-100/80 text-slate-700 dark:border-slate-700 dark:bg-slate-800/60 dark:text-slate-200">
           {category}
         </Badge>
       )
@@ -210,11 +215,16 @@ export const invoiceColumns: ColumnDef<Invoice>[] = [
       )
     },
     cell: ({ row }) => {
-      const dueDate = row.getValue("dueDate") as Date
+      const dueDate = row.getValue("dueDate") as Date | undefined
+
+      if (!dueDate) {
+        return <div className="text-sm text-slate-400">—</div>
+      }
+
       const isOverdue = dueDate < new Date() && row.original.status !== 'paid'
-      
+
       return (
-        <div className={`text-sm ${isOverdue ? 'text-red-600 font-medium' : 'text-slate-600'}`}>
+        <div className={`text-sm ${isOverdue ? 'text-red-600 font-medium' : 'text-slate-600 dark:text-slate-300'}`}>
           {dueDate.toLocaleDateString('en-AU')}
         </div>
       )
@@ -235,7 +245,12 @@ export const invoiceColumns: ColumnDef<Invoice>[] = [
       )
     },
     cell: ({ row }) => {
-      const receivedDate = row.getValue("receivedDate") as Date
+      const receivedDate = row.getValue("receivedDate") as Date | undefined
+
+      if (!receivedDate) {
+        return <div className="text-sm text-slate-400">—</div>
+      }
+
       return (
         <div className="text-sm text-slate-600 dark:text-slate-400">
           {receivedDate.toLocaleDateString('en-AU')}
@@ -246,7 +261,7 @@ export const invoiceColumns: ColumnDef<Invoice>[] = [
   {
     id: "actions",
     header: "Actions",
-    cell: ({ row, table }) => {
+    cell: ({ row }) => {
       const invoice = row.original
       
       return (

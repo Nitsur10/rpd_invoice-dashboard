@@ -5,10 +5,9 @@ test.describe('Visual Application Review', () => {
   const pages = [
     { name: 'dashboard', url: '/', title: 'Dashboard' },
     { name: 'invoices', url: '/invoices', title: 'Invoices' },
-    { name: 'kanban', url: '/kanban', title: 'Kanban Board' },
+    { name: 'kanban', url: '/kanban', title: 'RPD Kanban Board' },
     { name: 'analytics', url: '/analytics', title: 'Analytics' },
     { name: 'settings', url: '/settings', title: 'Settings' },
-    { name: 'status', url: '/status', title: 'Status' },
   ];
 
   async function capturePageScreenshots(page: Page, pageName: string) {

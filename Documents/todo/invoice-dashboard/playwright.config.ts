@@ -1,4 +1,23 @@
 import { defineConfig, devices } from '@playwright/test';
+import dotenv from 'dotenv';
+
+// Load environment variables before defining config
+dotenv.config({ path: '.env.local' });
+
+// Ensure required env vars are available
+const requiredEnvVars = {
+  NEXT_PUBLIC_SUPABASE_URL: process.env.NEXT_PUBLIC_SUPABASE_URL,
+  NEXT_PUBLIC_SUPABASE_ANON_KEY: process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
+  SUPABASE_URL: process.env.SUPABASE_URL,
+  SUPABASE_SERVICE_ROLE_KEY: process.env.SUPABASE_SERVICE_ROLE_KEY,
+};
+
+// Validate that we have the required environment variables
+Object.entries(requiredEnvVars).forEach(([key, value]) => {
+  if (!value) {
+    throw new Error(`Required environment variable ${key} is not set`);
+  }
+});
 
 /**
  * @see https://playwright.dev/docs/test-configuration
@@ -18,7 +37,7 @@ export default defineConfig({
   /* Shared settings for all the projects below. See https://playwright.dev/docs/api/class-testoptions. */
   use: {
     /* Base URL to use in actions like `await page.goto('/')`. */
-    baseURL: 'http://localhost:3002',
+    baseURL: 'http://127.0.0.1:3002',
 
     /* Collect trace when retrying the failed test. See https://playwright.dev/docs/trace-viewer */
     trace: 'on-first-retry',
@@ -64,8 +83,8 @@ export default defineConfig({
 
   /* Run your local dev server before starting the tests */
   webServer: {
-    command: 'npm run dev',
-    url: 'http://localhost:3002',
+    command: 'npx tsx scripts/playwright-dev-server.ts',
+    url: 'http://127.0.0.1:3002',
     reuseExistingServer: !process.env.CI,
   },
 });

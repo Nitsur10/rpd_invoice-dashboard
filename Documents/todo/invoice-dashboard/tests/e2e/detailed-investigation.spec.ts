@@ -1,10 +1,19 @@
 import { test, expect } from '@playwright/test';
+import { ensureTestUser, loginViaUI } from './test-utils';
+
+test.beforeAll(async () => {
+  await ensureTestUser();
+});
+
+test.beforeEach(async ({ page }) => {
+  await loginViaUI(page);
+});
 
 test.describe('Detailed Issue Investigation', () => {
   test('investigate "247" in invoices tab and amount visibility', async ({ page }) => {
     await page.goto('/invoices');
     await page.waitForLoadState('networkidle');
-    await expect(page.getByRole('heading', { level: 1, name: /Invoice Management/i })).toBeVisible();
+    await expect(page.getByRole('heading', { level: 1, name: /RPD Invoices/i })).toBeVisible();
     await page.waitForTimeout(2000); // Allow data fetch to settle
 
     // Screenshot for analysis
@@ -87,7 +96,6 @@ test.describe('Detailed Issue Investigation', () => {
       { url: '/kanban', name: 'Kanban' },
       { url: '/analytics', name: 'Analytics' },
       { url: '/settings', name: 'Settings' },
-      { url: '/status', name: 'Status' },
     ];
 
     for (const pageInfo of pages) {
@@ -137,7 +145,6 @@ test.describe('Detailed Issue Investigation', () => {
       { url: '/kanban', name: 'Kanban' },
       { url: '/analytics', name: 'Analytics' },
       { url: '/settings', name: 'Settings' },
-      { url: '/status', name: 'Status' },
     ];
 
     for (const pageInfo of pages) {
