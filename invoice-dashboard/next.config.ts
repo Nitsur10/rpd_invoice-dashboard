@@ -31,6 +31,14 @@ const nextConfig: NextConfig = {
   
   // Enhanced webpack optimization
   webpack: (config, { dev, isServer }) => {
+    config.resolve = config.resolve ?? {};
+    config.resolve.alias = config.resolve.alias ?? {};
+
+    if (!isServer) {
+      config.resolve.alias["@/lib/orchestrator/persistence"] =
+        "@/lib/orchestrator/persistence.browser";
+    }
+
     if (!dev && !isServer) {
       // Enhanced bundle optimization
       config.optimization = {
