@@ -17,6 +17,28 @@ interface DataTableViewOptionsProps<TData> {
   table: Table<TData>
 }
 
+const COLUMN_LABELS: Record<string, string> = {
+  invoice_number: "Invoice #",
+  supplier_name: "Supplier",
+  total: "Amount",
+  computed_status: "Status",
+  source: "Source",
+  due_date: "Due Date",
+  invoice_date: "Invoice Date",
+}
+
+const formatColumnLabel = (columnId: string) => {
+  if (COLUMN_LABELS[columnId]) {
+    return COLUMN_LABELS[columnId]
+  }
+
+  return columnId
+    .split("_")
+    .filter(Boolean)
+    .map((segment) => segment.charAt(0).toUpperCase() + segment.slice(1))
+    .join(" ")
+}
+
 export function DataTableViewOptions<TData>({
   table,
 }: DataTableViewOptionsProps<TData>) {
@@ -49,14 +71,7 @@ export function DataTableViewOptions<TData>({
                 checked={column.getIsVisible()}
                 onCheckedChange={(value) => column.toggleVisibility(!!value)}
               >
-                {column.id === "invoiceNumber" && "Invoice #"}
-                {column.id === "vendorName" && "Vendor"}
-                {column.id === "amount" && "Amount"}
-                {column.id === "status" && "Status"}
-                {column.id === "category" && "Category"}
-                {column.id === "dueDate" && "Due Date"}
-                {column.id === "receivedDate" && "Received"}
-                {!["invoiceNumber", "vendorName", "amount", "status", "category", "dueDate", "receivedDate"].includes(column.id) && column.id}
+                {formatColumnLabel(column.id)}
               </DropdownMenuCheckboxItem>
             )
           })}
