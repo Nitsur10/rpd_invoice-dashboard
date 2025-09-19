@@ -4,7 +4,8 @@ test.describe('Detailed Issue Investigation', () => {
   test('investigate "247" in invoices tab and amount visibility', async ({ page }) => {
     await page.goto('/invoices');
     await page.waitForLoadState('networkidle');
-    await page.waitForTimeout(3000); // Wait for data to load
+    await expect(page.getByRole('heading', { level: 1, name: /Invoice Management/i })).toBeVisible();
+    await page.waitForTimeout(2000); // Allow data fetch to settle
 
     // Screenshot for analysis
     await page.screenshot({ 
@@ -12,25 +13,15 @@ test.describe('Detailed Issue Investigation', () => {
       fullPage: true 
     });
 
-    // Look for "247" text in the page
-    const pageContent = await page.textContent('body');
-    console.log('=== CHECKING FOR "247" ===');
-    if (pageContent?.includes('247')) {
-      console.log('✅ Found "247" in page content');
-      
-      // Find all elements containing "247"
-      const elementsWithText = await page.locator('text=247').all();
-      console.log(`Found ${elementsWithText.length} elements containing "247"`);
-      
-      for (let i = 0; i < elementsWithText.length; i++) {
-        const element = elementsWithText[i];
-        const elementText = await element.textContent();
-        const elementTag = await element.evaluate(el => el.tagName);
-        const elementClass = await element.getAttribute('class');
-        console.log(`Element ${i + 1}: ${elementTag} with class "${elementClass}" contains: "${elementText}"`);
-      }
+    // Gather the dynamic invoice count exposed in the header copy.
+    console.log('=== CHECKING INVOICE COUNT SUMMARY ===');
+    const summaryLocator = page.locator('text=/total invoices/i').first();
+    const summaryText = (await summaryLocator.count()) ? await summaryLocator.textContent() : null;
+    const countMatch = summaryText?.match(/(\d+) total invoices/i);
+    if (countMatch) {
+      console.log(`✅ Found invoice count summary: ${countMatch[1]} total invoices`);
     } else {
-      console.log('❌ "247" not found in page content');
+      console.log('❌ Unable to locate invoice count summary text');
     }
 
     // Check invoice amount visibility
@@ -45,7 +36,7 @@ test.describe('Detailed Issue Investigation', () => {
     }
 
     // Look for currency amounts in the table
-    const amountCells = page.locator('[class*="amount"], text=/\\$[0-9]/, text=/AUD/, td:has-text("$")');
+    const amountCells = page.locator('td:has-text("$")');
     const amountCount = await amountCells.count();
     console.log(`Found ${amountCount} potential amount cells`);
 
@@ -206,18 +197,14 @@ test.describe('Detailed Issue Investigation', () => {
     for (let i = 0; i < navCount; i++) {
       const navItem = navItems.nth(i);
       const navText = await navItem.textContent();
-      const hasIndicator = await navItem.locator('[class*="badge"], [class*="indicator"], text=/[0-9]+/').count() > 0;
+      const indicatorLocator = navItem.locator('div').filter({ hasText: /^[0-9]+$/ });
+      const hasIndicator = await indicatorLocator.count() > 0;
       
       console.log(`Nav ${i + 1}: "${navText?.trim()}" - Has indicator: ${hasIndicator}`);
       
       if (hasIndicator) {
-        const indicators = navItem.locator('[class*="badge"], [class*="indicator"], text=/[0-9]+/');
-        const indicatorCount = await indicators.count();
-        for (let j = 0; j < indicatorCount; j++) {
-          const indicator = indicators.nth(j);
-          const indicatorText = await indicator.textContent();
-          console.log(`  Indicator ${j + 1}: "${indicatorText}"`);
-        }
+        const indicatorText = await indicatorLocator.first().textContent();
+        console.log(`  Indicator: "${indicatorText?.trim()}"`);
       }
     }
   });

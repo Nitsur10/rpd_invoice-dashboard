@@ -1,3 +1,5 @@
+const path = require('path')
+
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   serverExternalPackages: ['@supabase/supabase-js'],
@@ -11,6 +13,20 @@ const nextConfig = {
   },
   // Webpack configuration optimized for Supabase-only setup
   webpack: (config, { isServer }) => {
+    if (!isServer) {
+      config.resolve = config.resolve || {}
+      config.resolve.alias = {
+        ...(config.resolve.alias || {}),
+        '@/lib/orchestrator/persistence': path.resolve(__dirname, 'src/lib/orchestrator/persistence.browser.ts'),
+      }
+
+      config.resolve.fallback = {
+        ...(config.resolve.fallback || {}),
+        fs: false,
+        path: false,
+      }
+    }
+
     // No Prisma externals needed since we use Supabase exclusively
     return config
   }

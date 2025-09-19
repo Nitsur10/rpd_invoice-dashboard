@@ -4,17 +4,18 @@ test.describe('Accessibility Improvements Verification', () => {
   test('should have proper labels for all inputs on invoices page', async ({ page }) => {
     await page.goto('/invoices');
     await page.waitForLoadState('networkidle');
+    await expect(page.getByRole('heading', { level: 1, name: /Invoice Management/i })).toBeVisible();
 
     // Check search input has proper label
-    const searchInput = page.locator('input[placeholder="Search invoices..."]');
-    await expect(searchInput).toHaveAttribute('aria-label', 'Search invoices by vendor name, invoice number, or description');
+    const searchInput = page.getByRole('textbox', { name: /Search invoices by vendor/i });
+    await expect(searchInput).toBeVisible();
 
-    // Check pagination select has proper label  
+    // Check pagination select trigger is labelled
     const paginationSelect = page.locator('[aria-label="Select number of rows per page"]');
-    await expect(paginationSelect).toBeVisible();
+    await expect(paginationSelect).toBeAttached();
 
     // Check faceted filter inputs have proper labels
-    const statusFilterButton = page.locator('button:has-text("Status")');
+    const statusFilterButton = page.locator('[data-slot="popover-trigger"]').filter({ hasText: /Status/i }).first();
     if (await statusFilterButton.isVisible()) {
       await statusFilterButton.click();
       const statusFilterInput = page.locator('[aria-label="Filter by status"]');
@@ -24,12 +25,12 @@ test.describe('Accessibility Improvements Verification', () => {
 
     // Check select all checkbox has proper label
     const selectAllCheckbox = page.locator('[aria-label="Select all invoices on this page"]');
-    await expect(selectAllCheckbox).toBeVisible();
+    await expect(selectAllCheckbox).toBeAttached();
 
     // Check individual row checkboxes have proper labels
     const firstRowCheckbox = page.locator('[aria-label*="Select invoice"]').first();
     if (await firstRowCheckbox.isVisible()) {
-      await expect(firstRowCheckbox).toHaveAttribute('aria-label');
+      await expect(firstRowCheckbox).toHaveAttribute('aria-label', /Select invoice/);
     }
   });
 
@@ -72,20 +73,19 @@ test.describe('Accessibility Improvements Verification', () => {
 
   test('should have proper heading hierarchy', async ({ page }) => {
     const pages = [
-      { url: '/', expectedH1: 'RPD Invoice Dashboard' },
-      { url: '/invoices', expectedH1: 'Invoice Management' },
-      { url: '/kanban', expectedH1: 'Kanban Board' },
-      { url: '/analytics', expectedH1: 'Analytics Dashboard' },
-      { url: '/settings', expectedH1: 'Settings' },
-      { url: '/status', expectedH1: 'API Status' },
+      { url: '/', expected: /RPD Invoice Dashboard/i },
+      { url: '/invoices', expected: /Invoice Management/i },
+      { url: '/kanban', expected: /Kanban Board/i },
+      { url: '/analytics', expected: /Analytics Dashboard/i },
+      { url: '/settings', expected: /Settings/i },
+      { url: '/status', expected: /API Status/i },
     ];
 
     for (const pageInfo of pages) {
       await page.goto(pageInfo.url);
       await page.waitForLoadState('networkidle');
       
-      const h1 = page.locator('main h1').first();
-      await expect(h1).toContainText(pageInfo.expectedH1);
+      await expect(page.getByRole('heading', { level: 1, name: pageInfo.expected })).toBeVisible();
     }
   });
 

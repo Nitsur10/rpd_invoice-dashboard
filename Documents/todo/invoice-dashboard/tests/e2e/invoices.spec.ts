@@ -3,18 +3,19 @@ import { test, expect } from '@playwright/test';
 test.describe('Invoices Page', () => {
   test('should load invoices page with data table', async ({ page }) => {
     await page.goto('/invoices');
+    await page.waitForLoadState('networkidle');
     
-    // Check page title
-    await expect(page.locator('h1')).toContainText('Invoices');
-    
+    // Check page heading
+    await expect(page.getByRole('heading', { level: 1, name: /Invoice Management/i })).toBeVisible();
+
     // Check for filters section
-    await expect(page.locator('text=Filters')).toBeVisible();
+    await expect(page.getByRole('button', { name: /Filter/i })).toBeVisible();
     
-    // Check for data table
-    await expect(page.locator('[role="table"]')).toBeVisible();
+    // Check for data table header (virtualized body renders separately)
+    await expect(page.locator('table')).toBeVisible();
     
     // Check for pagination
-    await expect(page.locator('text=rows per page')).toBeVisible();
+    await expect(page.getByText(/Rows per page/i)).toBeVisible();
   });
 
   test('should be able to search invoices', async ({ page }) => {

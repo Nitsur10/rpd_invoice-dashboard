@@ -1,420 +1,150 @@
-# 🚀 Production Deployment Guide - Invoice Management Dashboard
+# Production Deployment Guide – RPD Invoice Dashboard
 
-## 📋 Overview
-This guide explains how to deploy your invoice management application to production with a proper database, team access, and data synchronization.
+This guide walks through taking the current Supabase-backed invoice dashboard to production. It replaces the earlier Prisma instructions and reflects the code that is live at commit 7713f4e.
 
-## 🗄️ Database Architecture
+---
 
-### Current State (Development)
+## 1. Architecture At A Glance
+
 ```
-CSV Files → Application → Browser Display
-(No persistence, read-only)
-```
-
-### Production Architecture
-```
-Spreadsheet → Import → Database → API → Application → Team Access
-                ↓                           ↑
-            Automatic Sync              Team Updates
+Supabase (Postgres) ⇄ API Routes (/api/*) ⇄ Next.js App Router ⇄ Browser
+                               │
+                               └── Playwright smoke + visual tests
 ```
 
-## 💾 Database Setup Options
+- **Database**: Supabase Postgres using the `Invoice` table (and optional `AuditLog`, `Users`).
+- **API Layer**: App Router routes under `src/app/api` call Supabase via a service-role key.
+- **Frontend**: Static pages pre-rendered at build, hydrated by TanStack Query for live data.
+- **Testing**: Playwright e2e, accessibility, and visual regression suites (see `tests/`).
 
-### Option 1: SQLite (Simple, Local)
-Perfect for single-server deployment, handles up to 10,000 invoices easily.
+---
+
+## 2. Prerequisites
+
+- Supabase project (free tier is sufficient) with service-role access.
+- Vercel account with permissions on the `rpd-invoice-dashboard` project.
+- Local tooling: Node 22.x, PNPM/NPM (repo uses `npm`), `vercel` CLI (already installed).
+
+---
+
+## 3. Supabase Database Setup
+
+1. **Create tables** – run in the Supabase SQL editor:
+   ```sql
+   create table if not exists "Invoice" (
+     id uuid primary key default uuid_generate_v4(),
+     invoice_number text unique not null,
+     total numeric not null,
+     amount_due numeric default 0,
+     supplier_name text,
+     supplier_email text,
+     source text default 'excel_import',
+     status text default 'pending',
+     invoice_date timestamptz,
+     due_date timestamptz,
+     created_at timestamptz default now(),
+     updated_at timestamptz default now(),
+     metadata jsonb default '{}'
+   );
+
+   create table if not exists "AuditLog" (
+     id uuid primary key default uuid_generate_v4(),
+     entity_type text not null,
+     entity_id text,
+     action text not null,
+     changes jsonb,
+     created_at timestamptz default now(),
+     user_id text,
+     ip_address text,
+     user_agent text
+   );
+
+   create or replace function trigger_set_timestamp()
+   returns trigger as $$
+   begin
+     new.updated_at = now();
+     return new;
+   end;
+   $$ language plpgsql;
+
+   drop trigger if exists set_timestamp on "Invoice";
+   create trigger set_timestamp
+     before update on "Invoice"
+     for each row
+     execute procedure trigger_set_timestamp();
+   ```
+
+2. **Import seed data (optional)** – use Supabase UI to upload CSV/Excel to the `Invoice` table or connect n8n/Lightsail pipeline to insert rows.
+
+3. **RLS** – keep Row Level Security disabled for now (the API routes use the service role). Introduce RLS policies later alongside auth.
+
+---
+
+## 4. Environment Variables
+
+| Variable | Description |
+| --- | --- |
+| `NEXT_PUBLIC_SUPABASE_URL` | Supabase project URL |
+| `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Supabase anon key for client-side reads |
+| `SUPABASE_SERVICE_ROLE_KEY` | Service role key used by API routes |
+| `SUPABASE_INVOICES_TABLE` | Defaults to `Invoice`; override only if you renamed |
+
+Create `.env.local` locally and configure the same keys in Vercel Project Settings → Environment Variables. Use **Preview** scope for non-production data, **Production** for live data.
+
+---
+
+## 5. Local Verification Checklist
 
 ```bash
-# Install SQLite dependencies
-npm install better-sqlite3 @prisma/client prisma
-
-# Initialize Prisma ORM
-npx prisma init --datasource-provider sqlite
-```
-
-### Option 2: PostgreSQL (Recommended for Production)
-Best for multi-user access, cloud deployment, and scalability.
-
-```bash
-# Using Supabase (Free tier available)
-# 1. Create account at https://supabase.com
-# 2. Create new project
-# 3. Get connection string
-
-# Install dependencies
-npm install @supabase/supabase-js @prisma/client prisma
-
-# Set environment variable
-echo "DATABASE_URL=postgresql://..." >> .env.local
-```
-
-### Option 3: MySQL (Enterprise)
-For existing enterprise infrastructure.
-
-```bash
-# Install MySQL dependencies
-npm install mysql2 @prisma/client prisma
-
-# Initialize Prisma for MySQL
-npx prisma init --datasource-provider mysql
-```
-
-## 📊 Database Schema
-
-Create file: `prisma/schema.prisma`
-
-```prisma
-generator client {
-  provider = "prisma-client-js"
-}
-
-datasource db {
-  provider = "postgresql" // or "sqlite" or "mysql"
-  url      = env("DATABASE_URL")
-}
-
-model Invoice {
-  id                String   @id @default(cuid())
-  emailId           String   @unique
-  subject           String
-  fromEmail         String?
-  fromName          String?
-  receivedDate      DateTime
-  category          String
-  invoiceNumber     String   @unique
-  amount            Float
-  vendor            String
-  dueDate           DateTime?
-  oneDriveLink      String?
-  xeroLink          String?
-  processingStatus  String
-  processedAt       DateTime
-  paymentStatus     String   @default("pending")
-  createdAt         DateTime @default(now())
-  updatedAt         DateTime @updatedAt
-  
-  // Payment tracking fields
-  paymentDate       DateTime?
-  paymentMethod     String?
-  transactionId     String?
-  paymentNotes      String?
-  confirmedBy       String?
-  
-  @@index([vendor])
-  @@index([paymentStatus])
-  @@index([dueDate])
-  @@index([invoiceNumber])
-}
-
-model PaymentHistory {
-  id            String   @id @default(cuid())
-  invoiceId     String
-  status        String
-  changedBy     String
-  changedAt     DateTime @default(now())
-  notes         String?
-  
-  @@index([invoiceId])
-}
-
-model User {
-  id            String   @id @default(cuid())
-  email         String   @unique
-  name          String
-  role          String   // admin, manager, viewer
-  createdAt     DateTime @default(now())
-}
-```
-
-## 🔄 Data Import & Sync
-
-### Automatic CSV Import Script
-
-Create file: `scripts/import-invoices.js`
-
-```javascript
-const { PrismaClient } = require('@prisma/client');
-const fs = require('fs');
-const csv = require('csv-parser');
-
-const prisma = new PrismaClient();
-
-async function importInvoices() {
-  const results = [];
-  
-  fs.createReadStream('data/invoices_cleaned_2024.csv')
-    .pipe(csv())
-    .on('data', (data) => results.push(data))
-    .on('end', async () => {
-      console.log(`Importing ${results.length} invoices...`);
-      
-      for (const row of results) {
-        await prisma.invoice.upsert({
-          where: { emailId: row.Email_ID },
-          update: {
-            amount: parseFloat(row.Amount),
-            vendor: row.Vendor,
-            dueDate: row.Due_Date ? new Date(row.Due_Date) : null,
-            paymentStatus: row.Processing_Status === 'Processed' ? 'pending' : 'pending'
-          },
-          create: {
-            emailId: row.Email_ID,
-            subject: row.Subject,
-            fromEmail: row.From_Email,
-            fromName: row.From_Name,
-            receivedDate: new Date(row.Received_Date),
-            category: row.Category,
-            invoiceNumber: row.Invoice_Number,
-            amount: parseFloat(row.Amount),
-            vendor: row.Vendor,
-            dueDate: row.Due_Date ? new Date(row.Due_Date) : null,
-            oneDriveLink: row.OneDrive_Link,
-            xeroLink: row.Xero_Link,
-            processingStatus: row.Processing_Status,
-            processedAt: new Date(row.Processed_At),
-            paymentStatus: 'pending'
-          }
-        });
-      }
-      
-      console.log('✅ Import complete!');
-      await prisma.$disconnect();
-    });
-}
-
-importInvoices();
-```
-
-## 🌐 Deployment Options
-
-### 1. Vercel (Recommended - Free Tier)
-```bash
-# Install Vercel CLI
-npm i -g vercel
-
-# Deploy
-vercel
-
-# Set environment variables
-vercel env add DATABASE_URL
-```
-
-### 2. AWS Amplify
-```bash
-# Install Amplify CLI
-npm i -g @aws-amplify/cli
-
-# Initialize
-amplify init
-
-# Add hosting
-amplify add hosting
-
-# Deploy
-amplify publish
-```
-
-### 3. Self-Hosted (Your Server)
-```bash
-# Build production bundle
+npm ci
 npm run build
-
-# Start production server
-npm run start
-
-# Use PM2 for process management
-npm i -g pm2
-pm2 start npm --name "invoice-dashboard" -- start
-pm2 save
-pm2 startup
+npm run test        # Playwright e2e + visual
+npm run smoke       # API smoke checks (Supabase required)
 ```
 
-### 4. Docker Deployment
-```dockerfile
-# Dockerfile
-FROM node:18-alpine
+- Ensure `npm run build` finishes without contacting Google Fonts (fonts are bundled).  
+- The Playwright suite needs the service-role key; provide a dedicated testing key with minimal scope if possible.
 
-WORKDIR /app
+---
 
-COPY package*.json ./
-RUN npm ci --only=production
+## 6. Deploying With Vercel
 
-COPY . .
-RUN npm run build
+1. **Login (if needed)**: `vercel login` or `VERCEL_TOKEN=... vercel whoami`.
+2. **Link project** (first time only): `vercel link` → choose `rpd-invoice-dashboard`.
+3. **Trigger build**: `vercel --prod` or push to `main` (CI build runs automatically).
+4. **Monitor build**: `vercel list rpd-invoice-dashboard` and `vercel inspect <deployment-url> --logs`.
+5. **Promote/alias**: The build auto-aliases to `https://rpd-invoice-dashboard-niteshs-projects-b751d5f8.vercel.app` on success.
 
-EXPOSE 3000
+> If the build ever fails with missing Google Fonts, ensure outbound network access or switch to `next/font/local`.
 
-CMD ["npm", "start"]
-```
+---
 
-## 👥 Team Access & Permissions
+## 7. Post-Deployment Validation
 
-### User Roles Implementation
+- Visit production URL and compare against `http://192.168.86.196:3002/`.
+- Run targeted Playwright specs against the production URL (set `PLAYWRIGHT_BASE_URL`).
+- Check Supabase dashboard → Logs for API access and DB writes.
+- Configure Vercel Analytics or set up budget monitoring using `src/lib/observability.ts` outputs.
 
-```typescript
-// src/lib/auth.ts
-export enum UserRole {
-  ADMIN = 'admin',      // Full access
-  MANAGER = 'manager',  // Update payment status
-  VIEWER = 'viewer'     // Read-only
-}
+---
 
-export const permissions = {
-  [UserRole.ADMIN]: ['read', 'create', 'update', 'delete', 'export'],
-  [UserRole.MANAGER]: ['read', 'update', 'export'],
-  [UserRole.VIEWER]: ['read']
-};
-```
+## 8. Operational Notes
 
-### Authentication Options
+- The repo purposely ignores TypeScript/ESLint errors during `next build` (see `next.config.js`). Re-enable once CI stabilizes.
+- Keep `supabaseAdmin` usage confined to server routes; never expose the service key to the client.
+- For background sync (n8n, Lightsail scripts), authenticate via Supabase service key and insert into the `Invoice` table to update dashboards in real time.
 
-1. **NextAuth.js** (Recommended)
-```bash
-npm install next-auth @auth/prisma-adapter
-```
+---
 
-2. **Clerk** (Fastest setup)
-```bash
-npm install @clerk/nextjs
-```
+## 9. Troubleshooting Quick Reference
 
-3. **Supabase Auth** (If using Supabase DB)
-```bash
-npm install @supabase/auth-helpers-nextjs
-```
+| Symptom | Likely Cause | Fix |
+| --- | --- | --- |
+| `@prisma/client did not initialize yet` | Legacy script or dependency requiring Prisma | Remove legacy scripts (e.g., `process-excel-data.js`) and redeploy |
+| Build blocked on Google Fonts | No egress during build | Add fonts locally or allow outbound HTTPS |
+| Empty dashboard | Supabase env vars missing in Vercel | Re-enter env vars and redeploy |
+| API routes 500 | Service role key incorrect or table missing | Regenerate key or migrate schema |
 
-## 📱 Team Features
+---
 
-### Payment Update Workflow
-1. Team member clicks "Update Payment" on invoice
-2. Modal opens with payment form
-3. Team member enters:
-   - Payment status (Paid/Pending/Overdue)
-   - Payment date
-   - Payment method
-   - Transaction ID
-   - Their name
-4. System records update with timestamp
-5. Dashboard reflects changes immediately
-6. Audit trail maintained in PaymentHistory table
-
-### Real-time Updates
-```typescript
-// Using Pusher for real-time updates
-npm install pusher pusher-js
-
-// When payment is updated
-await pusher.trigger('invoices', 'payment-updated', {
-  invoiceId: invoice.id,
-  newStatus: paymentStatus,
-  updatedBy: userName
-});
-```
-
-## 🔒 Security Considerations
-
-### Environment Variables
-```env
-# .env.production
-DATABASE_URL=your_database_url
-NEXTAUTH_SECRET=generate_random_secret
-NEXTAUTH_URL=https://yourdomain.com
-```
-
-### Data Validation
-- Sanitize all inputs
-- Use Prisma's built-in SQL injection protection
-- Implement rate limiting
-- Add CORS protection
-
-## 📈 Monitoring & Analytics
-
-### Application Monitoring
-```bash
-# Install monitoring
-npm install @sentry/nextjs
-
-# Initialize
-npx @sentry/wizard@latest -i nextjs
-```
-
-### Database Backups
-```bash
-# Daily backup script
-#!/bin/bash
-DATE=$(date +%Y%m%d)
-pg_dump $DATABASE_URL > backup_$DATE.sql
-aws s3 cp backup_$DATE.sql s3://your-bucket/backups/
-```
-
-## 🚦 Deployment Checklist
-
-### Pre-Deployment
-- [ ] Set up production database
-- [ ] Import existing invoice data
-- [ ] Configure environment variables
-- [ ] Set up authentication
-- [ ] Test payment update flow
-- [ ] Configure backup strategy
-
-### Deployment
-- [ ] Build production bundle
-- [ ] Deploy to hosting platform
-- [ ] Set up SSL certificate
-- [ ] Configure domain name
-- [ ] Test all features
-
-### Post-Deployment
-- [ ] Monitor application logs
-- [ ] Set up error tracking
-- [ ] Create user accounts for team
-- [ ] Document update procedures
-- [ ] Schedule regular backups
-
-## 📞 Support & Maintenance
-
-### Daily Operations
-1. **Data Import**: Run import script for new invoices
-2. **Payment Updates**: Team updates via UI
-3. **Reports**: Export data as needed
-4. **Monitoring**: Check dashboard health
-
-### Weekly Tasks
-1. Backup database
-2. Review audit logs
-3. Update invoice statuses
-4. Generate reports
-
-## 🎯 Quick Start Commands
-
-```bash
-# 1. Clone and setup
-git clone [your-repo]
-cd invoice-dashboard
-npm install
-
-# 2. Setup database
-npx prisma init
-npx prisma migrate dev --name init
-npx prisma generate
-
-# 3. Import data
-node scripts/import-invoices.js
-
-# 4. Run production build
-npm run build
-npm run start
-
-# 5. Deploy
-vercel --prod
-```
-
-## 📊 Cost Estimates
-
-| Service | Free Tier | Paid |
-|---------|-----------|------|
-| **Vercel Hosting** | ✅ Yes | $20/mo |
-| **Supabase DB** | ✅ 500MB | $25/mo |
-| **Clerk Auth** | ✅ 5,000 users | $25/mo |
-| **Total** | **$0/mo** | $70/mo |
-
-Your invoice dashboard is production-ready with enterprise features at minimal cost!
+With these steps the production deployment mirrors the local dashboard and passes the Vercel build using commit 7713f4e.
