@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { KanbanBoard } from '@/components/kanban/kanban-board';
+import { KanbanBoard, type BoardStatus, type KanbanInvoice } from '@/components/kanban/kanban-board';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent } from '@/components/ui/card';
@@ -14,22 +14,49 @@ import {
   DollarSign,
   TrendingUp
 } from 'lucide-react';
-import { Invoice, PaymentStatus } from '@/lib/types';
-import { groupInvoicesByStatus } from '@/lib/data';
 import { getRealInvoiceData } from '@/lib/real-invoice-data';
 
 export default function KanbanPage() {
-  const [invoices, setInvoices] = useState<Invoice[]>([]);
+  const [invoices, setInvoices] = useState<KanbanInvoice[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     loadSampleData();
   }, []);
 
+  const normalizeStatus = (status?: string | null): BoardStatus => {
+    switch (status?.toLowerCase()) {
+      case 'in_review':
+        return 'in_review';
+      case 'approved':
+        return 'approved';
+      case 'paid':
+        return 'paid';
+      case 'overdue':
+        return 'overdue';
+      default:
+        return 'pending';
+    }
+  };
+
   const loadSampleData = async () => {
     try {
-      const realInvoices = getRealInvoiceData();
-      setInvoices(realInvoices);
+      const realInvoices = getRealInvoiceData() as Array<
+        KanbanInvoice & { status?: string | null; paymentStatus?: string | null }
+      >;
+      const mappedInvoices: KanbanInvoice[] = realInvoices.map((invoice) => {
+        const originalStatus = normalizeStatus(invoice.status);
+        const boardStatus = originalStatus === 'paid' ? 'pending' : originalStatus;
+
+        return {
+          ...invoice,
+          originalStatus,
+          status: boardStatus,
+          paymentStatus: boardStatus,
+        };
+      });
+
+      setInvoices(mappedInvoices);
     } catch (error) {
       console.error('Error loading invoice data:', error);
     } finally {
@@ -37,18 +64,28 @@ export default function KanbanPage() {
     }
   };
 
-  const handleInvoiceUpdate = (invoiceId: string, newStatus: PaymentStatus) => {
+  const handleInvoiceUpdate = (invoiceId: string, newStatus: BoardStatus) => {
     setInvoices(prevInvoices =>
       prevInvoices.map(invoice =>
         invoice.id === invoiceId
-          ? { ...invoice, paymentStatus: newStatus }
+          ? { ...invoice, status: newStatus, paymentStatus: newStatus }
           : invoice
       )
     );
   };
 
-  const groupedInvoices = groupInvoicesByStatus(invoices);
-  
+  const groupedInvoices = invoices.reduce<Record<BoardStatus, KanbanInvoice[]>>((acc, invoice) => {
+    const status = invoice.status ?? 'pending';
+    acc[status].push(invoice);
+    return acc;
+  }, {
+    pending: [],
+    in_review: [],
+    approved: [],
+    paid: [],
+    overdue: [],
+  });
+
   const stats = {
     total: invoices.length,
     totalAmount: invoices.reduce((sum, inv) => sum + inv.amount, 0),

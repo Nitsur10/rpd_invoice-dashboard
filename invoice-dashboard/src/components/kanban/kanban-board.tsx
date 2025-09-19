@@ -33,11 +33,27 @@ import {
   ExternalLink,
   MoreHorizontal,
 } from 'lucide-react';
-import { Invoice, PaymentStatus, KanbanColumn } from '@/lib/types';
+import type { InvoiceLegacy } from '@/lib/types';
 import { formatDateForSydney, isDueSoon, isOverdue } from '@/lib/data';
 
+export type BoardStatus = 'pending' | 'in_review' | 'approved' | 'paid' | 'overdue';
+
+export type KanbanInvoice = Omit<InvoiceLegacy, 'status'> & {
+  status: BoardStatus;
+  paymentStatus: BoardStatus;
+  originalStatus?: BoardStatus;
+};
+
+const STATUS_LABELS: Record<BoardStatus, string> = {
+  pending: 'Pending',
+  in_review: 'In Review',
+  approved: 'Approved',
+  paid: 'Paid',
+  overdue: 'Overdue',
+};
+
 interface KanbanCardProps {
-  invoice: Invoice;
+  invoice: KanbanInvoice;
 }
 
 function KanbanCard({ invoice }: KanbanCardProps) {
@@ -130,10 +146,21 @@ function KanbanCard({ invoice }: KanbanCardProps) {
 
             {/* Category Badge */}
             <div className="flex items-center justify-between">
-              <Badge variant="outline" className="text-xs">
-                {invoice.category.replace('_', ' ')}
-              </Badge>
-              
+              <div className="flex items-center gap-2">
+                <Badge variant="outline" className="text-xs">
+                  {invoice.category.replace('_', ' ')}
+                </Badge>
+
+                {invoice.originalStatus && invoice.originalStatus !== invoice.status && (
+                  <Badge
+                    variant="secondary"
+                    className="text-xs bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-950/30 dark:text-emerald-300 dark:border-emerald-800"
+                  >
+                    Originally {STATUS_LABELS[invoice.originalStatus]}
+                  </Badge>
+                )}
+              </div>
+
               <div className="flex items-center space-x-1">
                 {invoice.invoiceUrl && (
                   <Button variant="ghost" size="sm" className="h-6 w-6 p-0">
@@ -167,16 +194,26 @@ function KanbanCard({ invoice }: KanbanCardProps) {
   );
 }
 
+interface KanbanColumn {
+  id: BoardStatus;
+  title: string;
+  invoices: KanbanInvoice[];
+}
+
 interface KanbanColumnProps {
   column: KanbanColumn;
-  invoices: Invoice[];
+  invoices: KanbanInvoice[];
 }
 
 function KanbanColumnComponent({ column, invoices }: KanbanColumnProps) {
-  const getColumnColor = (status: PaymentStatus) => {
+  const getColumnColor = (status: BoardStatus) => {
     switch (status) {
       case 'pending':
         return 'border-blue-200 dark:border-blue-800 bg-blue-50/30 dark:bg-blue-950/10';
+      case 'in_review':
+        return 'border-amber-200 dark:border-amber-800 bg-amber-50/30 dark:bg-amber-950/10';
+      case 'approved':
+        return 'border-purple-200 dark:border-purple-800 bg-purple-50/30 dark:bg-purple-950/10';
       case 'paid':
         return 'border-emerald-200 dark:border-emerald-800 bg-emerald-50/30 dark:bg-emerald-950/10';
       case 'overdue':
@@ -186,10 +223,14 @@ function KanbanColumnComponent({ column, invoices }: KanbanColumnProps) {
     }
   };
 
-  const getStatusIcon = (status: PaymentStatus) => {
+  const getStatusIcon = (status: BoardStatus) => {
     switch (status) {
+      case 'in_review':
+        return <Eye className="h-4 w-4 text-amber-600" />;
+      case 'approved':
+        return <CheckCircle className="h-4 w-4 text-purple-600" />;
       case 'paid':
-        return <CheckCircle className="h-4 w-4 text-emerald-600" />;
+        return <DollarSign className="h-4 w-4 text-emerald-600" />;
       case 'overdue':
         return <AlertTriangle className="h-4 w-4 text-red-600" />;
       default:
@@ -211,7 +252,11 @@ function KanbanColumnComponent({ column, invoices }: KanbanColumnProps) {
         </div>
       </div>
 
-      <SortableContext items={invoices.map(i => i.id)} strategy={verticalListSortingStrategy}>
+      <SortableContext
+        id={column.id}
+        items={invoices.map(i => i.id)}
+        strategy={verticalListSortingStrategy}
+      >
         <div className="space-y-2">
           {invoices.map((invoice) => (
             <KanbanCard key={invoice.id} invoice={invoice} />
@@ -230,8 +275,8 @@ function KanbanColumnComponent({ column, invoices }: KanbanColumnProps) {
 }
 
 interface KanbanBoardProps {
-  invoices: Invoice[];
-  onInvoiceUpdate: (invoiceId: string, newStatus: PaymentStatus) => void;
+  invoices: KanbanInvoice[];
+  onInvoiceUpdate: (invoiceId: string, newStatus: BoardStatus) => void;
 }
 
 export function KanbanBoard({ invoices, onInvoiceUpdate }: KanbanBoardProps) {
@@ -243,7 +288,9 @@ export function KanbanBoard({ invoices, onInvoiceUpdate }: KanbanBoardProps) {
   );
 
   const columns: KanbanColumn[] = [
-    { id: 'pending', title: 'Pending', invoices: [] },
+    { id: 'pending', title: 'Pending Review', invoices: [] },
+    { id: 'in_review', title: 'In Review', invoices: [] },
+    { id: 'approved', title: 'Approved', invoices: [] },
     { id: 'paid', title: 'Paid', invoices: [] },
     { id: 'overdue', title: 'Overdue', invoices: [] },
   ];
@@ -256,7 +303,10 @@ export function KanbanBoard({ invoices, onInvoiceUpdate }: KanbanBoardProps) {
     }
     acc[status].push(invoice);
     return acc;
-  }, {} as Record<PaymentStatus, Invoice[]>);
+  }, columns.reduce((acc, column) => {
+    acc[column.id] = [];
+    return acc;
+  }, {} as Record<BoardStatus, KanbanInvoice[]>));
 
   function handleDragEnd(event: DragEndEvent) {
     const { active, over } = event;
@@ -264,14 +314,19 @@ export function KanbanBoard({ invoices, onInvoiceUpdate }: KanbanBoardProps) {
     if (!over) return;
 
     const activeInvoiceId = active.id as string;
-    const overColumnId = over.id as PaymentStatus;
+    const overColumnIdRaw = over.data?.current?.sortable?.containerId ?? over.id;
+    if (!overColumnIdRaw) return;
+
+    const overColumnId = overColumnIdRaw as BoardStatus;
+    const isValidColumn = columns.some(column => column.id === overColumnId);
+    if (!isValidColumn) return;
 
     // Find which column the invoice is currently in
     const activeInvoice = invoices.find(inv => inv.id === activeInvoiceId);
     if (!activeInvoice) return;
 
     const currentStatus = activeInvoice.status || 'pending';
-    
+
     if (currentStatus !== overColumnId) {
       onInvoiceUpdate(activeInvoiceId, overColumnId);
     }
