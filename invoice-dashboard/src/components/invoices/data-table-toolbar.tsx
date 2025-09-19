@@ -76,10 +76,23 @@ export function DataTableToolbar<TData>({
           <Search className="absolute left-2 top-2.5 h-4 w-4 text-slate-500 dark:text-slate-400" />
           <Input
             placeholder="Search invoices..."
-            value={(table.getColumn("vendorName")?.getFilterValue() as string) ?? ""}
-            onChange={(event) =>
-              table.getColumn("vendorName")?.setFilterValue(event.target.value)
+            value={
+              (table
+                .getColumn("supplier_name")
+                ?.getFilterValue() as string) ??
+              (table
+                .getColumn("invoice_number")
+                ?.getFilterValue() as string) ??
+              ""
             }
+            onChange={(event) => {
+              const value = event.target.value
+              const searchColumn =
+                table.getColumn("supplier_name") ??
+                table.getColumn("invoice_number")
+
+              searchColumn?.setFilterValue(value)
+            }}
             className="pl-8"
           />
         </div>
