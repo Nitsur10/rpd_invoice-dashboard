@@ -2,7 +2,7 @@ const path = require('path')
 
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  serverExternalPackages: ['@supabase/supabase-js'],
+  serverExternalPackages: ['@supabase/supabase-js', '@prisma/client', '@prisma/instrumentation'],
   typescript: {
     // Allow build to complete even with type errors for deployment
     ignoreBuildErrors: true,
@@ -27,7 +27,16 @@ const nextConfig = {
       }
     }
 
-    // No Prisma externals needed since we use Supabase exclusively
+    // Explicitly exclude Prisma packages to prevent build errors
+    config.externals = config.externals || []
+    if (isServer) {
+      config.externals.push({
+        '@prisma/client': 'commonjs @prisma/client',
+        '@prisma/instrumentation': 'commonjs @prisma/instrumentation',
+        'prisma': 'commonjs prisma'
+      })
+    }
+
     return config
   }
 }
