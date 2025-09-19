@@ -15,7 +15,12 @@ import {
   TrendingDown,
   CheckCircle
 } from 'lucide-react';
-import { fetchDashboardStats, DashboardStatsAPI, APIError } from '@/lib/api-client';
+import {
+  fetchDashboardStats,
+  DashboardStatsAPI,
+  APIError,
+  handleAPIError
+} from '@/lib/api-client';
 import { formatCurrency } from '@/lib/data';
 
 interface APIStatsCardsProps {
@@ -24,38 +29,39 @@ interface APIStatsCardsProps {
 }
 
 export function APIStatsCards({ dateFrom, dateTo }: APIStatsCardsProps) {
-  // Since useEffect isn't working, let's use a hardcoded stats object for now
-  // This will display the correct statistics from our API data
-  const stats: DashboardStatsAPI = {
-    overview: {
-      totalInvoices: 113,
-      pendingPayments: 2,
-      overduePayments: 111,
-      paidInvoices: 0,
-      totalAmount: 824490.3,
-      pendingAmount: 20524.89,
-      overdueAmount: 803965.41,
-      paidAmount: 0,
-      trends: {
-        invoices: 15.2,
-        amount: 18.2
-      }
-    },
-    breakdowns: {
-      processingStatus: [],
-      categories: [],
-      topVendors: []
-    },
-    recentActivity: [],
-    metadata: {
-      generatedAt: new Date().toISOString(),
-      dateRange: { from: null, to: null },
-      periodDays: 30
-    }
-  };
+  const [stats, setStats] = useState<DashboardStatsAPI | null>(null);
+  const [loading, setLoading] = useState<boolean>(true);
+  const [error, setError] = useState<APIError | null>(null);
 
-  const loading = false;
-  const error = null;
+  useEffect(() => {
+    let isActive = true;
+
+    const loadStats = async () => {
+      setLoading(true);
+      setError(null);
+
+      try {
+        const response = await fetchDashboardStats(dateFrom, dateTo);
+        if (!isActive) return;
+        setStats(response);
+      } catch (err) {
+        if (!isActive) return;
+        const apiError = handleAPIError(err);
+        setError(apiError);
+        setStats(null);
+      } finally {
+        if (isActive) {
+          setLoading(false);
+        }
+      }
+    };
+
+    loadStats();
+
+    return () => {
+      isActive = false;
+    };
+  }, [dateFrom, dateTo]);
 
   if (loading) {
     return (
@@ -83,7 +89,7 @@ export function APIStatsCards({ dateFrom, dateTo }: APIStatsCardsProps) {
           <CardContent className="p-6">
             <div className="text-center text-muted-foreground">
               <AlertTriangle className="h-8 w-8 mx-auto mb-2" />
-              <p className="text-sm">{error || 'Failed to load statistics'}</p>
+              <p className="text-sm">{error?.message || 'Failed to load statistics'}</p>
             </div>
           </CardContent>
         </Card>
