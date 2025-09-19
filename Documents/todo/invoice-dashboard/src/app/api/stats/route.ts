@@ -8,6 +8,7 @@ async function getStatsHandler(request: NextRequest) {
       totalAmount: 0,
       paidAmount: 0,
       pendingAmount: 0,
+      pendingPayments: 0,
       overdueAmount: 0,
       overdueCount: 0,
       trends: {
