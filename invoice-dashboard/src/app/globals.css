@@ -244,3 +244,22 @@
 .react-datepicker__day--outside-month {
   @apply text-slate-400 dark:text-slate-600;
 }
+
+.calendar-surface {
+  overflow: visible;
+  padding: 0.25rem 0.5rem 0.5rem;
+}
+
+.invoice-date-picker.react-datepicker {
+  width: 100%;
+  border: none;
+  background: transparent;
+  font-family: inherit;
+  padding: 0.25rem 0.5rem 0.5rem;
+  box-sizing: border-box;
+}
+
+.invoice-date-picker .react-datepicker__week {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+}
