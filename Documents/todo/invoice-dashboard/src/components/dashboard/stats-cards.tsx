@@ -1,34 +1,13 @@
 'use client';
 
+import { DollarSign, FileText, Clock, AlertTriangle, TrendingUp, TrendingDown } from 'lucide-react';
+
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { cardVariants, iconVariants, badgeVariants } from '@/lib/variants';
-import { cn } from '@/lib/utils';
-import { 
-  DollarSign, 
-  FileText, 
-  Clock, 
-  AlertTriangle, 
-  TrendingUp,
-  TrendingDown,
-  CheckCircle,
-  Loader2
-} from 'lucide-react';
-import { useQuery } from '@tanstack/react-query';
-import { fetchDashboardStats } from '@/lib/api/stats';
+import { useDashboardStats } from '@/components/dashboard/dashboard-stats-provider';
 
-interface StatsCardsProps {
-  dateFrom?: string;
-  dateTo?: string;
-}
-
-export function StatsCards({ dateFrom, dateTo }: StatsCardsProps) {
-  const { data: stats, isLoading, error } = useQuery({
-    queryKey: ['dashboard-stats', { dateFrom, dateTo }],
-    queryFn: () => fetchDashboardStats({ dateFrom, dateTo }),
-    staleTime: 5 * 60 * 1000, // 5 minutes
-    refetchInterval: 10 * 60 * 1000, // 10 minutes
-  });
+export function StatsCards() {
+  const { data: stats, isLoading, error } = useDashboardStats();
 
   if (isLoading) {
     return (
@@ -117,25 +96,37 @@ export function StatsCards({ dateFrom, dateTo }: StatsCardsProps) {
           primary: {
             background: 'linear-gradient(135deg, hsl(var(--rpd-navy-secondary)) 0%, hsl(var(--rpd-navy-tertiary)) 100%)',
             borderColor: 'hsl(var(--border))',
-            iconBg: 'linear-gradient(135deg, hsl(220, 25%, 25%) 0%, hsl(220, 30%, 20%) 100%)'
+            iconBg: 'linear-gradient(135deg, hsl(220, 25%, 25%) 0%, hsl(220, 30%, 20%) 100%)',
+            titleColor: 'hsl(var(--rpd-gold-secondary))',
+            valueColor: 'hsl(var(--rpd-gold-primary))',
+            metaColor: 'hsla(var(--rpd-gold-primary) / 0.8)',
           },
           success: {
             background: 'linear-gradient(135deg, hsl(var(--rpd-navy-secondary)) 0%, hsl(142, 25%, 8%) 100%)',
             borderColor: 'hsl(142, 50%, 20%)', 
-            iconBg: 'linear-gradient(135deg, hsl(142, 76%, 36%) 0%, hsl(142, 84%, 29%) 100%)'
+            iconBg: 'linear-gradient(135deg, hsl(142, 76%, 36%) 0%, hsl(142, 84%, 29%) 100%)',
+            titleColor: 'hsl(var(--rpd-gold-secondary))',
+            valueColor: 'hsl(var(--rpd-gold-primary))',
+            metaColor: 'hsla(var(--rpd-gold-primary) / 0.8)',
           },
           warning: {
             background: 'linear-gradient(135deg, hsl(var(--rpd-navy-secondary)) 0%, hsl(38, 25%, 8%) 100%)',
             borderColor: 'hsl(38, 50%, 20%)',
-            iconBg: 'linear-gradient(135deg, hsl(var(--rpd-gold-primary)) 0%, hsl(var(--rpd-gold-secondary)) 100%)'
+            iconBg: 'linear-gradient(135deg, hsl(var(--rpd-gold-primary)) 0%, hsl(var(--rpd-gold-secondary)) 100%)',
+            titleColor: 'hsl(var(--rpd-gold-secondary))',
+            valueColor: 'hsl(var(--rpd-gold-primary))',
+            metaColor: 'hsla(var(--rpd-gold-primary) / 0.8)',
           },
           danger: {
             background: 'linear-gradient(135deg, hsl(var(--rpd-navy-secondary)) 0%, hsl(0, 25%, 8%) 100%)',
             borderColor: 'hsl(0, 50%, 20%)',
-            iconBg: 'linear-gradient(135deg, hsl(0, 84%, 60%) 0%, hsl(0, 76%, 50%) 100%)'
+            iconBg: 'linear-gradient(135deg, hsl(0, 84%, 60%) 0%, hsl(0, 76%, 50%) 100%)',
+            titleColor: 'hsl(var(--rpd-gold-secondary))',
+            valueColor: 'hsl(var(--rpd-gold-primary))',
+            metaColor: 'hsla(var(--rpd-gold-primary) / 0.8)',
           }
         };
-        
+
         return (
           <Card 
             key={card.id}
@@ -153,7 +144,10 @@ export function StatsCards({ dateFrom, dateTo }: StatsCardsProps) {
             <div className="absolute inset-0 scale-0 bg-white/10 dark:bg-black/10 rounded-lg group-active:scale-100 transition-transform duration-200 ease-out" />
             
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 relative z-10">
-              <CardTitle className="text-sm font-semibold text-foreground">
+              <CardTitle
+                className="text-sm font-semibold"
+                style={{ color: cardStyle[card.type].titleColor }}
+              >
                 {card.title}
               </CardTitle>
               <div className="p-2 rounded-lg shadow-md group-hover:scale-110 transition-all duration-300 ease-out floating"
@@ -165,11 +159,10 @@ export function StatsCards({ dateFrom, dateTo }: StatsCardsProps) {
             </CardHeader>
             <CardContent className="relative z-10">
               <div className="space-y-3">
-                <div className={`text-3xl font-bold group-hover:scale-105 transition-transform duration-300 ease-out tabular-nums ${
-                  card.title.toLowerCase().includes('amount') || card.value.includes('$') 
-                    ? 'rpd-text-gradient' 
-                    : 'text-foreground'
-                }`}>
+                <div
+                  className="text-3xl font-bold group-hover:scale-105 transition-transform duration-300 ease-out tabular-nums"
+                  style={{ color: cardStyle[card.type].valueColor }}
+                >
                   {card.value}
                 </div>
                 
@@ -183,9 +176,17 @@ export function StatsCards({ dateFrom, dateTo }: StatsCardsProps) {
                     }`}
                   >
                     <TrendIcon className={`h-3 w-3 transition-all duration-300 ${card.trendUp ? 'group-hover:animate-bounce' : 'group-hover:animate-pulse'}`} />
-                    <span className={`text-xs font-medium ${card.trend.includes('$') ? 'rpd-text-gradient' : ''}`}>{card.trend}</span>
+                    <span
+                      className="text-xs font-medium"
+                      style={{ color: cardStyle[card.type].valueColor }}
+                    >
+                      {card.trend}
+                    </span>
                   </Badge>
-                  <span className="text-xs font-medium text-muted-foreground">
+                  <span
+                    className="text-xs font-medium"
+                    style={{ color: cardStyle[card.type].metaColor }}
+                  >
                     vs last month
                   </span>
                 </div>

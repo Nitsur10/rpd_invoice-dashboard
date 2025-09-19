@@ -1,139 +1,59 @@
-import { DashboardStats, Invoice, InvoiceStatus, PaymentStatus } from './types';
+import { invoicesSinceMay2025 } from './generated/invoices-since-may';
+import { DashboardStats, Invoice, PaymentStatus } from './types';
 
 /**
  * Sample dashboard statistics for testing
  */
+function toPaymentStatus(status: string): PaymentStatus {
+  switch (status.toLowerCase()) {
+    case 'paid':
+      return 'PAID';
+    case 'overdue':
+      return 'OVERDUE';
+    default:
+      return 'PENDING';
+  }
+}
+
+function parseDate(value: string | null): Date {
+  return value ? new Date(value) : new Date();
+}
+
+export const mockInvoiceData: Invoice[] = invoicesSinceMay2025.map((entry) => ({
+  id: entry.id,
+  invoiceNumber: entry.invoiceNumber,
+  vendorName: entry.vendorName,
+  vendorEmail: entry.vendorEmail,
+  amount: entry.amount,
+  amountDue: entry.amountDue,
+  issueDate: parseDate(entry.issueDate),
+  dueDate: parseDate(entry.dueDate ?? entry.issueDate),
+  status: toPaymentStatus(entry.status),
+  description: entry.description,
+  category: entry.category || 'General',
+  paymentTerms: entry.paymentTerms || 'Net 30',
+  invoiceUrl: entry.invoiceUrl || undefined,
+  receivedDate: parseDate(entry.receivedDate ?? entry.issueDate),
+  paidDate: entry.status === 'paid' ? parseDate(entry.dueDate ?? entry.issueDate) : undefined,
+}));
+
+const totalAmount = mockInvoiceData.reduce((sum, invoice) => sum + invoice.amount, 0);
+const pendingPayments = mockInvoiceData.filter((invoice) => invoice.status === 'PENDING').length;
+const overduePayments = mockInvoiceData.filter((invoice) => invoice.status === 'OVERDUE').length;
+const paidInvoices = mockInvoiceData.filter((invoice) => invoice.status === 'PAID');
+
 export const mockDashboardStats: DashboardStats = {
-  totalInvoices: 247,
-  totalAmount: 127456.50,
-  pendingPayments: 23,
-  overduePayments: 12,
-  paidAmount: 89234.75,
-  averageAmount: 516.26,
-  monthlyGrowth: 23.5,
-  paymentRate: 87.4,
-  averageProcessingTime: 2.3,
-  activeVendors: 47,
-  successRate: 98.7
+  totalInvoices: mockInvoiceData.length,
+  totalAmount,
+  pendingPayments,
+  overduePayments,
+  paidAmount: paidInvoices.reduce((sum, invoice) => sum + invoice.amount, 0),
+  averageAmount: mockInvoiceData.length ? totalAmount / mockInvoiceData.length : 0,
 };
 
 /**
  * Sample invoice data for testing components
  */
-export const mockInvoiceData: Invoice[] = [
-  {
-    id: 'INV-2024-001',
-    invoiceNumber: 'RPD-001-2024',
-    vendorName: 'Kingsley Construction Co.',
-    amount: 15420.50,
-    dueDate: '2024-12-15',
-    issueDate: '2024-11-15',
-    status: 'pending' as InvoiceStatus,
-    paymentStatus: 'pending' as PaymentStatus,
-    description: 'Foundation work - Residential Block A',
-    category: 'Construction',
-    priority: 'high',
-    tags: ['construction', 'foundation', 'block-a']
-  },
-  {
-    id: 'INV-2024-002', 
-    invoiceNumber: 'RPD-002-2024',
-    vendorName: 'Elite Electrical Services',
-    amount: 8750.00,
-    dueDate: '2024-12-20',
-    issueDate: '2024-11-20',
-    status: 'approved' as InvoiceStatus,
-    paymentStatus: 'paid' as PaymentStatus,
-    description: 'Electrical installation - Phase 2',
-    category: 'Electrical',
-    priority: 'medium',
-    tags: ['electrical', 'installation', 'phase2']
-  },
-  {
-    id: 'INV-2024-003',
-    invoiceNumber: 'RPD-003-2024', 
-    vendorName: 'Premier Plumbing Solutions',
-    amount: 12300.75,
-    dueDate: '2024-12-10',
-    issueDate: '2024-11-10',
-    status: 'processed' as InvoiceStatus,
-    paymentStatus: 'overdue' as PaymentStatus,
-    description: 'Plumbing systems - Units 1-12',
-    category: 'Plumbing',
-    priority: 'high',
-    tags: ['plumbing', 'systems', 'units']
-  },
-  {
-    id: 'INV-2024-004',
-    invoiceNumber: 'RPD-004-2024',
-    vendorName: 'Horizon HVAC Systems', 
-    amount: 22150.25,
-    dueDate: '2024-12-25',
-    issueDate: '2024-11-25',
-    status: 'draft' as InvoiceStatus,
-    paymentStatus: 'pending' as PaymentStatus,
-    description: 'HVAC installation - Commercial Wing',
-    category: 'HVAC',
-    priority: 'medium',
-    tags: ['hvac', 'installation', 'commercial']
-  },
-  {
-    id: 'INV-2024-005',
-    invoiceNumber: 'RPD-005-2024',
-    vendorName: 'Australia Paint & Coatings',
-    amount: 6890.00,
-    dueDate: '2025-01-05',
-    issueDate: '2024-12-05',
-    status: 'pending' as InvoiceStatus,
-    paymentStatus: 'pending' as PaymentStatus,
-    description: 'Interior painting - Residential units',
-    category: 'Painting',
-    priority: 'low',
-    tags: ['painting', 'interior', 'residential']
-  },
-  {
-    id: 'INV-2024-006',
-    invoiceNumber: 'RPD-006-2024',
-    vendorName: 'Sydney Roofing Specialists',
-    amount: 18500.50,
-    dueDate: '2024-12-30',
-    issueDate: '2024-11-30',
-    status: 'approved' as InvoiceStatus,
-    paymentStatus: 'paid' as PaymentStatus,
-    description: 'Roof installation - Building C',
-    category: 'Roofing',
-    priority: 'high',
-    tags: ['roofing', 'installation', 'building-c']
-  },
-  {
-    id: 'INV-2024-007',
-    invoiceNumber: 'RPD-007-2024',
-    vendorName: 'Metro Glass & Glazing',
-    amount: 9420.75,
-    dueDate: '2025-01-10',
-    issueDate: '2024-12-10',
-    status: 'processed' as InvoiceStatus,
-    paymentStatus: 'pending' as PaymentStatus,
-    description: 'Window installation - All floors',
-    category: 'Glazing',
-    priority: 'medium',
-    tags: ['glazing', 'windows', 'floors']
-  },
-  {
-    id: 'INV-2024-008',
-    invoiceNumber: 'RPD-008-2024',
-    vendorName: 'Prestige Flooring Solutions',
-    amount: 14750.25,
-    dueDate: '2024-12-12',
-    issueDate: '2024-11-12',
-    status: 'pending' as InvoiceStatus,
-    paymentStatus: 'overdue' as PaymentStatus,
-    description: 'Hardwood flooring - Premium units',
-    category: 'Flooring',
-    priority: 'high',
-    tags: ['flooring', 'hardwood', 'premium']
-  }
-];
 
 /**
  * Sample activity data for dashboard
@@ -196,19 +116,27 @@ export const mockKanbanData = {
       id: 'pending', 
       title: 'Pending Review',
       color: 'blue',
-      invoiceIds: ['INV-2024-001', 'INV-2024-005', 'INV-2024-008']
+      invoiceIds: [
+        'INV-2024-001',
+        'INV-2024-002',
+        'INV-2024-003',
+        'INV-2024-005',
+        'INV-2024-006',
+        'INV-2024-007',
+        'INV-2024-008'
+      ]
     },
     'approved': {
       id: 'approved',
       title: 'Approved',
       color: 'green', 
-      invoiceIds: ['INV-2024-002', 'INV-2024-006']
+      invoiceIds: []
     },
     'processed': {
       id: 'processed',
       title: 'Processed',
       color: 'purple',
-      invoiceIds: ['INV-2024-003', 'INV-2024-007']
+      invoiceIds: []
     }
   },
   columnOrder: ['draft', 'pending', 'approved', 'processed']

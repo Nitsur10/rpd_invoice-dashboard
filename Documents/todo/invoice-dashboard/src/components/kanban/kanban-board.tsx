@@ -33,8 +33,10 @@ import {
   ExternalLink,
   MoreHorizontal,
 } from 'lucide-react';
-import { Invoice, PaymentStatus, KanbanColumn } from '@/lib/types';
+import { Invoice } from '@/lib/types';
 import { formatDateForSydney, isDueSoon, isOverdue } from '@/lib/data';
+
+export type BoardStatus = 'pending' | 'in_review' | 'approved' | 'paid' | 'overdue';
 
 interface KanbanCardProps {
   invoice: Invoice;
@@ -168,12 +170,15 @@ function KanbanCard({ invoice }: KanbanCardProps) {
 }
 
 interface KanbanColumnProps {
-  column: KanbanColumn;
+  column: {
+    id: BoardStatus;
+    title: string;
+  };
   invoices: Invoice[];
 }
 
 function KanbanColumnComponent({ column, invoices }: KanbanColumnProps) {
-  const getColumnColor = (status: PaymentStatus) => {
+  const getColumnColor = (status: BoardStatus) => {
     switch (status) {
       case 'pending':
         return 'border-blue-200 dark:border-blue-800 bg-blue-50/30 dark:bg-blue-950/10';
@@ -190,7 +195,7 @@ function KanbanColumnComponent({ column, invoices }: KanbanColumnProps) {
     }
   };
 
-  const getStatusIcon = (status: PaymentStatus) => {
+  const getStatusIcon = (status: BoardStatus) => {
     switch (status) {
       case 'paid':
         return <CheckCircle className="h-4 w-4 text-emerald-600" />;
@@ -235,7 +240,7 @@ function KanbanColumnComponent({ column, invoices }: KanbanColumnProps) {
 
 interface KanbanBoardProps {
   invoices: Invoice[];
-  onInvoiceUpdate: (invoiceId: string, newStatus: PaymentStatus) => void;
+  onInvoiceUpdate: (invoiceId: string, newStatus: BoardStatus) => void;
 }
 
 export function KanbanBoard({ invoices, onInvoiceUpdate }: KanbanBoardProps) {
@@ -246,7 +251,7 @@ export function KanbanBoard({ invoices, onInvoiceUpdate }: KanbanBoardProps) {
     })
   );
 
-  const columns: KanbanColumn[] = [
+  const columns: { id: BoardStatus; title: string }[] = [
     { id: 'pending', title: 'Pending', invoices: [] },
     { id: 'in_review', title: 'In Review', invoices: [] },
     { id: 'approved', title: 'Approved', invoices: [] },
@@ -256,13 +261,13 @@ export function KanbanBoard({ invoices, onInvoiceUpdate }: KanbanBoardProps) {
 
   // Group invoices by status
   const groupedInvoices = invoices.reduce((acc, invoice) => {
-    const status = invoice.paymentStatus || 'pending';
+    const status = (invoice.status ?? invoice.paymentStatus ?? 'pending') as BoardStatus;
     if (!acc[status]) {
       acc[status] = [];
     }
     acc[status].push(invoice);
     return acc;
-  }, {} as Record<PaymentStatus, Invoice[]>);
+  }, {} as Record<BoardStatus, Invoice[]>);
 
   function handleDragEnd(event: DragEndEvent) {
     const { active, over } = event;
@@ -270,13 +275,13 @@ export function KanbanBoard({ invoices, onInvoiceUpdate }: KanbanBoardProps) {
     if (!over) return;
 
     const activeInvoiceId = active.id as string;
-    const overColumnId = over.id as PaymentStatus;
+    const overColumnId = over.id as BoardStatus;
 
     // Find which column the invoice is currently in
     const activeInvoice = invoices.find(inv => inv.id === activeInvoiceId);
     if (!activeInvoice) return;
 
-    const currentStatus = activeInvoice.paymentStatus || 'pending';
+    const currentStatus = (activeInvoice.status ?? activeInvoice.paymentStatus ?? 'pending') as BoardStatus;
     
     if (currentStatus !== overColumnId) {
       onInvoiceUpdate(activeInvoiceId, overColumnId);
