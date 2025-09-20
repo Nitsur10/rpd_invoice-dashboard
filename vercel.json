@@ -1,7 +1,6 @@
 {
   "version": 2,
   "framework": "nextjs",
-  "rootDirectory": ".",
   "installCommand": "npm ci --no-optional",
   "buildCommand": "TURBOPACK=0 npm run build"
 }
