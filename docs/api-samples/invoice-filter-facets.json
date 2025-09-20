@@ -1,0 +1,25 @@
+{
+  "facets": {
+    "statuses": [
+      { "value": "pending", "count": 56 },
+      { "value": "paid", "count": 110 },
+      { "value": "overdue", "count": 12 }
+    ],
+    "categories": [
+      { "value": "Construction", "count": 64 },
+      { "value": "Utilities", "count": 34 },
+      { "value": "Materials", "count": 52 },
+      { "value": "Professional Services", "count": 28 }
+    ],
+    "vendors": [
+      { "value": "TasWater", "email": "accounts@taswater.com.au", "count": 18 },
+      { "value": "BuildMart", "email": "billing@buildmart.com.au", "count": 22 },
+      { "value": "Elite Electrical", "email": "invoices@eliteelectrical.com.au", "count": 16 }
+    ],
+    "amountRange": { "min": 180.5, "max": 23540.75 },
+    "dateRange": {
+      "min": "2024-05-01T00:00:00.000Z",
+      "max": "2025-09-18T10:12:00.000Z"
+    }
+  }
+}

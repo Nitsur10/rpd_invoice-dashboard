@@ -1,0 +1,1030 @@
+openapi: 3.0.3
+info:
+  title: Invoice Dashboard API
+  description: |
+    REST API for Invoice Management Dashboard - Small Business Edition
+    
+    This API provides endpoints for managing invoices, users, and payment tracking
+    for small businesses with up to 4 users and moderate invoice volumes.
+    
+    ## Authentication
+    All endpoints require JWT authentication via the `Authorization` header:
+    ```
+    Authorization: Bearer <jwt_token>
+    ```
+    
+    ## Rate Limiting
+    - 100 requests per minute per user
+    - 1000 requests per hour per user
+    
+    ## Error Responses
+    All errors follow the standard format:
+    ```json
+    {
+      "error": {
+        "code": "ERROR_CODE",
+        "message": "Human readable message",
+        "details": {}
+      }
+    }
+    ```
+  version: 1.0.0
+  contact:
+    name: API Support
+    email: support@invoicedashboard.com
+  license:
+    name: MIT
+    url: https://opensource.org/licenses/MIT
+
+servers:
+  - url: https://api.invoice-dashboard.com/v1
+    description: Production server
+  - url: https://staging.invoice-dashboard.com/v1
+    description: Staging server
+  - url: http://localhost:3000/api/v1
+    description: Local development
+
+security:
+  - bearerAuth: []
+
+paths:
+  # Authentication Endpoints
+  /auth/login:
+    post:
+      tags:
+        - Authentication
+      summary: User login
+      description: Authenticate user with email and password
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - email
+                - password
+              properties:
+                email:
+                  type: string
+                  format: email
+                  example: user@company.com
+                password:
+                  type: string
+                  format: password
+                  example: securePassword123
+      responses:
+        '200':
+          description: Login successful
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    type: object
+                    properties:
+                      user:
+                        $ref: '#/components/schemas/User'
+                      token:
+                        type: string
+                        example: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+                      expiresAt:
+                        type: string
+                        format: date-time
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '422':
+          $ref: '#/components/responses/ValidationError'
+
+  /auth/logout:
+    post:
+      tags:
+        - Authentication
+      summary: User logout
+      description: Invalidate current session token
+      responses:
+        '200':
+          description: Logout successful
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  message:
+                    type: string
+                    example: Logged out successfully
+
+  /auth/profile:
+    get:
+      tags:
+        - Authentication
+      summary: Get current user profile
+      description: Get authenticated user's profile information
+      responses:
+        '200':
+          description: User profile retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    $ref: '#/components/schemas/User'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+  # Invoice Endpoints
+  /invoices:
+    get:
+      tags:
+        - Invoices
+      summary: List invoices
+      description: |
+        Get paginated list of invoices with filtering and sorting options.
+        Users can only see invoices they have permission to view based on their role.
+      parameters:
+        - name: page
+          in: query
+          description: Page number (1-based)
+          schema:
+            type: integer
+            minimum: 1
+            default: 1
+        - name: limit
+          in: query
+          description: Number of items per page
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 20
+        - name: sortBy
+          in: query
+          description: Field to sort by
+          schema:
+            type: string
+            enum: [receivedDate, dueDate, amount, vendor, paymentStatus]
+            default: receivedDate
+        - name: sortOrder
+          in: query
+          description: Sort order
+          schema:
+            type: string
+            enum: [asc, desc]
+            default: desc
+        - name: vendor
+          in: query
+          description: Filter by vendor name
+          schema:
+            type: string
+        - name: paymentStatus
+          in: query
+          description: Filter by payment status
+          schema:
+            type: string
+            enum: [PENDING, PROCESSING, PAID, OVERDUE, CANCELLED, DISPUTED]
+        - name: sourceTab
+          in: query
+          description: Filter by source tab
+          schema:
+            type: string
+        - name: dateFrom
+          in: query
+          description: Filter invoices from this date
+          schema:
+            type: string
+            format: date
+        - name: dateTo
+          in: query
+          description: Filter invoices to this date
+          schema:
+            type: string
+            format: date
+        - name: amountMin
+          in: query
+          description: Minimum invoice amount
+          schema:
+            type: number
+            format: decimal
+        - name: amountMax
+          in: query
+          description: Maximum invoice amount
+          schema:
+            type: number
+            format: decimal
+      responses:
+        '200':
+          description: Invoices retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    type: object
+                    properties:
+                      invoices:
+                        type: array
+                        items:
+                          $ref: '#/components/schemas/Invoice'
+                      pagination:
+                        $ref: '#/components/schemas/Pagination'
+                      summary:
+                        type: object
+                        properties:
+                          totalAmount:
+                            type: number
+                            format: decimal
+                            example: 15234.50
+                          paidAmount:
+                            type: number
+                            format: decimal
+                            example: 8456.25
+                          overdueAmount:
+                            type: number
+                            format: decimal
+                            example: 2100.00
+                          pendingCount:
+                            type: integer
+                            example: 42
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+
+    post:
+      tags:
+        - Invoices
+      summary: Create new invoice
+      description: Create a new invoice (Admin/Employee only)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateInvoiceRequest'
+      responses:
+        '201':
+          description: Invoice created successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    $ref: '#/components/schemas/Invoice'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '422':
+          $ref: '#/components/responses/ValidationError'
+
+  /invoices/{id}:
+    get:
+      tags:
+        - Invoices
+      summary: Get invoice by ID
+      description: Retrieve a specific invoice by its ID
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: Invoice ID
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Invoice retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    $ref: '#/components/schemas/InvoiceDetailed'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+    put:
+      tags:
+        - Invoices
+      summary: Update invoice
+      description: Update an existing invoice (Admin/Employee only)
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: Invoice ID
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateInvoiceRequest'
+      responses:
+        '200':
+          description: Invoice updated successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    $ref: '#/components/schemas/Invoice'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '422':
+          $ref: '#/components/responses/ValidationError'
+
+  /invoices/{id}/payment:
+    patch:
+      tags:
+        - Invoices
+      summary: Update payment status
+      description: Update the payment status of an invoice
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: Invoice ID
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - paymentStatus
+              properties:
+                paymentStatus:
+                  type: string
+                  enum: [PENDING, PROCESSING, PAID, OVERDUE, CANCELLED, DISPUTED]
+                  example: PAID
+                paymentDate:
+                  type: string
+                  format: date-time
+                  example: '2025-01-15T10:30:00Z'
+                paymentMethod:
+                  type: string
+                  example: Bank Transfer
+                transactionId:
+                  type: string
+                  example: TXN-123456789
+                paymentNotes:
+                  type: string
+                  example: Payment received via online banking
+      responses:
+        '200':
+          description: Payment status updated successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    $ref: '#/components/schemas/Invoice'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  # Dashboard & Analytics
+  /dashboard/summary:
+    get:
+      tags:
+        - Dashboard
+      summary: Get dashboard summary
+      description: Get key metrics and summary data for dashboard
+      parameters:
+        - name: period
+          in: query
+          description: Time period for metrics
+          schema:
+            type: string
+            enum: [7d, 30d, 90d, 1y]
+            default: 30d
+      responses:
+        '200':
+          description: Dashboard summary retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    $ref: '#/components/schemas/DashboardSummary'
+
+  /dashboard/charts/payment-trends:
+    get:
+      tags:
+        - Dashboard
+      summary: Get payment trends chart data
+      description: Get data for payment trends chart
+      parameters:
+        - name: period
+          in: query
+          schema:
+            type: string
+            enum: [7d, 30d, 90d, 1y]
+            default: 90d
+        - name: groupBy
+          in: query
+          schema:
+            type: string
+            enum: [day, week, month]
+            default: week
+      responses:
+        '200':
+          description: Chart data retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        date:
+                          type: string
+                          format: date
+                        paid:
+                          type: number
+                          format: decimal
+                        pending:
+                          type: number
+                          format: decimal
+                        overdue:
+                          type: number
+                          format: decimal
+
+  # File Upload
+  /upload/excel:
+    post:
+      tags:
+        - File Management
+      summary: Upload Excel file
+      description: Upload and process Excel file with invoice data (Admin/Employee only)
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                file:
+                  type: string
+                  format: binary
+                  description: Excel file (.xlsx or .xls)
+                sourceTab:
+                  type: string
+                  description: Source tab identifier
+                  example: workflow1
+                replaceExisting:
+                  type: boolean
+                  description: Replace existing invoices with same invoice numbers
+                  default: false
+      responses:
+        '200':
+          description: File uploaded and processed successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    type: object
+                    properties:
+                      processedRows:
+                        type: integer
+                        example: 25
+                      createdInvoices:
+                        type: integer
+                        example: 20
+                      updatedInvoices:
+                        type: integer
+                        example: 3
+                      errors:
+                        type: array
+                        items:
+                          type: object
+                          properties:
+                            row:
+                              type: integer
+                            message:
+                              type: string
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '413':
+          description: File too large
+        '415':
+          description: Unsupported file type
+
+  # Export
+  /export/invoices:
+    get:
+      tags:
+        - Export
+      summary: Export invoices
+      description: Export invoices in various formats
+      parameters:
+        - name: format
+          in: query
+          required: true
+          schema:
+            type: string
+            enum: [csv, xlsx, pdf]
+        - name: vendor
+          in: query
+          schema:
+            type: string
+        - name: paymentStatus
+          in: query
+          schema:
+            type: string
+            enum: [PENDING, PROCESSING, PAID, OVERDUE, CANCELLED, DISPUTED]
+        - name: dateFrom
+          in: query
+          schema:
+            type: string
+            format: date
+        - name: dateTo
+          in: query
+          schema:
+            type: string
+            format: date
+      responses:
+        '200':
+          description: Export file generated successfully
+          content:
+            application/vnd.openxmlformats-officedocument.spreadsheetml.sheet:
+              schema:
+                type: string
+                format: binary
+            text/csv:
+              schema:
+                type: string
+            application/pdf:
+              schema:
+                type: string
+                format: binary
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+  schemas:
+    User:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          example: 550e8400-e29b-41d4-a716-446655440000
+        email:
+          type: string
+          format: email
+          example: user@company.com
+        firstName:
+          type: string
+          example: John
+        lastName:
+          type: string
+          example: Doe
+        role:
+          type: string
+          enum: [ADMIN, EMPLOYEE, CLIENT, VIEWER]
+          example: EMPLOYEE
+        isActive:
+          type: boolean
+          example: true
+        createdAt:
+          type: string
+          format: date-time
+        lastLogin:
+          type: string
+          format: date-time
+
+    Invoice:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        emailId:
+          type: string
+          example: AAMkADQyZmU2Mjk0LTU2YjktNDdhMS05YzE3LWJlNjNkZGQ0MWVhZg
+        subject:
+          type: string
+          example: Invoice INV-1264 from Vendor Ltd
+        fromEmail:
+          type: string
+          format: email
+          example: billing@vendor.com
+        fromName:
+          type: string
+          example: Vendor Ltd
+        receivedDate:
+          type: string
+          format: date-time
+        category:
+          type: string
+          example: standard_pdf
+        invoiceNumber:
+          type: string
+          example: INV-1264
+        amount:
+          type: number
+          format: decimal
+          example: 1012.50
+        vendor:
+          type: string
+          example: Vendor Ltd
+        dueDate:
+          type: string
+          format: date-time
+        oneDriveLink:
+          type: string
+          format: uri
+        xeroLink:
+          type: string
+          format: uri
+        processingStatus:
+          type: string
+          example: Processed
+        processedAt:
+          type: string
+          format: date-time
+        sourceTab:
+          type: string
+          example: workflow1
+        paymentStatus:
+          type: string
+          enum: [PENDING, PROCESSING, PAID, OVERDUE, CANCELLED, DISPUTED]
+          example: PENDING
+        paymentDate:
+          type: string
+          format: date-time
+        paymentMethod:
+          type: string
+          example: Bank Transfer
+        transactionId:
+          type: string
+          example: TXN-123456789
+        paymentNotes:
+          type: string
+          example: Payment received on time
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+
+    InvoiceDetailed:
+      allOf:
+        - $ref: '#/components/schemas/Invoice'
+        - type: object
+          properties:
+            paymentUpdates:
+              type: array
+              items:
+                type: object
+                properties:
+                  id:
+                    type: string
+                    format: uuid
+                  action:
+                    type: string
+                    example: status_changed
+                  previousValue:
+                    type: object
+                  newValue:
+                    type: object
+                  notes:
+                    type: string
+                  createdAt:
+                    type: string
+                    format: date-time
+                  user:
+                    type: object
+                    properties:
+                      firstName:
+                        type: string
+                      lastName:
+                        type: string
+
+    CreateInvoiceRequest:
+      type: object
+      required:
+        - emailId
+        - subject
+        - invoiceNumber
+        - amount
+        - vendor
+        - receivedDate
+        - sourceTab
+      properties:
+        emailId:
+          type: string
+        subject:
+          type: string
+        fromEmail:
+          type: string
+          format: email
+        fromName:
+          type: string
+        receivedDate:
+          type: string
+          format: date-time
+        category:
+          type: string
+        invoiceNumber:
+          type: string
+        amount:
+          type: number
+          format: decimal
+          minimum: 0
+        vendor:
+          type: string
+        dueDate:
+          type: string
+          format: date-time
+        oneDriveLink:
+          type: string
+          format: uri
+        xeroLink:
+          type: string
+          format: uri
+        sourceTab:
+          type: string
+
+    UpdateInvoiceRequest:
+      type: object
+      properties:
+        subject:
+          type: string
+        fromEmail:
+          type: string
+          format: email
+        fromName:
+          type: string
+        category:
+          type: string
+        amount:
+          type: number
+          format: decimal
+          minimum: 0
+        vendor:
+          type: string
+        dueDate:
+          type: string
+          format: date-time
+        oneDriveLink:
+          type: string
+          format: uri
+        xeroLink:
+          type: string
+          format: uri
+
+    DashboardSummary:
+      type: object
+      properties:
+        totalInvoices:
+          type: integer
+          example: 250
+        totalAmount:
+          type: number
+          format: decimal
+          example: 125430.50
+        paidAmount:
+          type: number
+          format: decimal
+          example: 89234.25
+        pendingAmount:
+          type: number
+          format: decimal
+          example: 36196.25
+        overdueAmount:
+          type: number
+          format: decimal
+          example: 15430.00
+        paymentStats:
+          type: object
+          properties:
+            paid:
+              type: integer
+              example: 180
+            pending:
+              type: integer
+              example: 45
+            overdue:
+              type: integer
+              example: 25
+        topVendors:
+          type: array
+          items:
+            type: object
+            properties:
+              vendor:
+                type: string
+                example: Vendor Ltd
+              amount:
+                type: number
+                format: decimal
+                example: 25430.50
+              count:
+                type: integer
+                example: 15
+        recentActivity:
+          type: array
+          items:
+            type: object
+            properties:
+              type:
+                type: string
+                example: payment_updated
+              invoiceNumber:
+                type: string
+                example: INV-1264
+              user:
+                type: string
+                example: John Doe
+              timestamp:
+                type: string
+                format: date-time
+
+    Pagination:
+      type: object
+      properties:
+        page:
+          type: integer
+          example: 1
+        limit:
+          type: integer
+          example: 20
+        total:
+          type: integer
+          example: 250
+        totalPages:
+          type: integer
+          example: 13
+        hasNext:
+          type: boolean
+          example: true
+        hasPrev:
+          type: boolean
+          example: false
+
+    Error:
+      type: object
+      properties:
+        error:
+          type: object
+          properties:
+            code:
+              type: string
+              example: VALIDATION_ERROR
+            message:
+              type: string
+              example: Invalid input data
+            details:
+              type: object
+
+  responses:
+    BadRequest:
+      description: Bad request - Invalid input
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+
+    Unauthorized:
+      description: Unauthorized - Authentication required
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+          example:
+            error:
+              code: UNAUTHORIZED
+              message: Authentication required
+              details: {}
+
+    Forbidden:
+      description: Forbidden - Insufficient permissions
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+          example:
+            error:
+              code: FORBIDDEN
+              message: Insufficient permissions to access this resource
+              details: {}
+
+    NotFound:
+      description: Resource not found
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+          example:
+            error:
+              code: NOT_FOUND
+              message: Resource not found
+              details: {}
+
+    ValidationError:
+      description: Validation error - Invalid input data
+      content:
+        application/json:
+          schema:
+            allOf:
+              - $ref: '#/components/schemas/Error'
+            example:
+              error:
+                code: VALIDATION_ERROR
+                message: Invalid input data
+                details:
+                  email: Email is required
+                  amount: Amount must be greater than 0
+
+tags:
+  - name: Authentication
+    description: User authentication and session management
+  - name: Invoices
+    description: Invoice management operations
+  - name: Dashboard
+    description: Dashboard and analytics endpoints
+  - name: File Management
+    description: File upload and processing
+  - name: Export
+    description: Data export functionality

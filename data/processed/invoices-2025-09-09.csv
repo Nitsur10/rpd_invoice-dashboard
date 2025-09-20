@@ -1,0 +1,4 @@
+id,emailId,subject,invoiceNumber,amount,vendor,sourceTab,paymentStatus,createdAt
+inv_1757421863346_1,EMAIL001,Invoice from Tab 1,INV-001,1234.5,Vendor A,tab1,PENDING,2025-09-09T12:44:23.346Z
+inv_1757421863346_2,EMAIL002,Invoice from Tab 2,INV-002,2345.75,Vendor B,tab2,PENDING,2025-09-09T12:44:23.346Z
+inv_1757421863346_3,EMAIL003,Invoice from Tab 3,INV-003,3456.25,Vendor C,tab3,PENDING,2025-09-09T12:44:23.346Z
