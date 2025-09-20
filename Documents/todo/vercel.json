@@ -2,7 +2,7 @@
   "version": 2,
   "framework": "nextjs",
   "rootDirectory": "invoice-dashboard",
-  "buildCommand": "npm run build",
+  "buildCommand": "npm run build:webpack",
   "installCommand": "npm ci --no-optional",
   "cleanUrls": true,
   "env": {
