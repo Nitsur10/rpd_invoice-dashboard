@@ -1,0 +1,823 @@
+{
+  "version": 1,
+  "updatedAt": "2025-09-18T12:02:13.463Z",
+  "workflows": [
+    {
+      "id": "FT-001",
+      "title": "Auth & Testing Stabilisation",
+      "description": "Stabilise middleware, Supabase wiring, and Playwright auth flows",
+      "status": "In Progress",
+      "currentPhase": "Foundation",
+      "startTime": "2025-01-15T09:00:00Z",
+      "estimatedCompletion": "2025-01-17T18:00:00Z",
+      "overallQualityScore": 68,
+      "tags": [
+        "auth",
+        "baseline"
+      ],
+      "agents": [
+        {
+          "id": "baseline-stabiliser",
+          "name": "Baseline Stabilisation",
+          "status": "Complete",
+          "progress": 100,
+          "duration": 5400000,
+          "outputs": [
+            "docs/middleware-audit.md"
+          ],
+          "dependencies": [],
+          "nextAgent": "testing-agent",
+          "startedAt": "2025-01-15T09:15:00Z",
+          "completedAt": "2025-09-17T22:34:49.043Z"
+        },
+        {
+          "id": "schema-architect",
+          "name": "Schema Architect Agent",
+          "status": "Complete",
+          "progress": 100,
+          "duration": 3600000,
+          "outputs": [
+            "supabase-audit-report.md"
+          ],
+          "dependencies": [],
+          "startedAt": "2025-01-15T09:30:00Z",
+          "completedAt": "2025-01-15T10:30:00Z"
+        },
+        {
+          "id": "testing-agent",
+          "name": "Testing Agent",
+          "status": "Complete",
+          "progress": 100,
+          "duration": 0,
+          "outputs": [
+            "docs/playwright-sandbox-log.md",
+            "docs/testing-reports/playwright-2025-09-17.md",
+            "playwright-report/index.html",
+            "docs/testing-reports/playwright-2025-09-18.md"
+          ],
+          "dependencies": [
+            "baseline-stabiliser",
+            "schema-architect"
+          ],
+          "nextAgent": null,
+          "startedAt": "2025-09-17T22:34:49.043Z",
+          "completedAt": "2025-09-18T12:02:13.463Z"
+        },
+        {
+          "id": "documentation-agent",
+          "name": "Documentation Agent",
+          "status": "Active",
+          "progress": 70,
+          "duration": 2700000,
+          "outputs": [
+            "docs/env-updates.md",
+            "docs/baseline-audit.md"
+          ],
+          "dependencies": [
+            "baseline-stabiliser"
+          ],
+          "nextAgent": null,
+          "startedAt": "2025-01-15T11:00:00Z",
+          "completedAt": null
+        }
+      ],
+      "qualityGates": [],
+      "history": []
+    },
+    {
+      "id": "FT-002",
+      "title": "Dashboard KPI Enhancements",
+      "description": "Polish hero layout and plan KPI component work",
+      "status": "Planning",
+      "currentPhase": "Foundation",
+      "startTime": "2025-01-17T09:00:00Z",
+      "estimatedCompletion": "2025-01-18T18:00:00Z",
+      "overallQualityScore": 0,
+      "tags": [
+        "dashboard",
+        "kpi"
+      ],
+      "agents": [
+        {
+          "id": "design-system",
+          "name": "Design System Agent",
+          "status": "Queued",
+          "progress": 0,
+          "duration": 0,
+          "outputs": [],
+          "dependencies": [],
+          "nextAgent": "component-architect",
+          "startedAt": null,
+          "completedAt": null
+        },
+        {
+          "id": "component-architect",
+          "name": "Component Architect Agent",
+          "status": "Queued",
+          "progress": 0,
+          "duration": 0,
+          "outputs": [],
+          "dependencies": [
+            "design-system"
+          ],
+          "nextAgent": null,
+          "startedAt": null,
+          "completedAt": null
+        }
+      ],
+      "qualityGates": [],
+      "history": []
+    },
+    {
+      "id": "FT-003",
+      "title": "Invoice Filter Optimisation",
+      "description": "Improve filter UI and Supabase query performance",
+      "status": "Planning",
+      "currentPhase": "Foundation",
+      "startTime": "2025-01-18T09:00:00Z",
+      "estimatedCompletion": "2025-01-19T18:00:00Z",
+      "overallQualityScore": 0,
+      "tags": [
+        "invoices"
+      ],
+      "agents": [
+        {
+          "id": "design-system",
+          "name": "Design System Agent",
+          "status": "Queued",
+          "progress": 0,
+          "duration": 0,
+          "outputs": [],
+          "dependencies": [],
+          "nextAgent": "schema-architect",
+          "startedAt": null,
+          "completedAt": null
+        },
+        {
+          "id": "schema-architect",
+          "name": "Schema Architect Agent",
+          "status": "Queued",
+          "progress": 0,
+          "duration": 0,
+          "outputs": [],
+          "dependencies": [
+            "design-system"
+          ],
+          "nextAgent": null,
+          "startedAt": null,
+          "completedAt": null
+        }
+      ],
+      "qualityGates": [],
+      "history": []
+    },
+    {
+      "id": "ID-002",
+      "title": "Dashboard KPI Enhancement",
+      "description": "Deliver accurate, responsive KPI surfaces with real-time data confidence.",
+      "status": "In Progress",
+      "currentPhase": "Foundation",
+      "startTime": "2025-09-18T22:48:26Z",
+      "estimatedCompletion": "2025-09-20T22:48:26Z",
+      "overallQualityScore": 0,
+      "tags": [
+        "dashboard",
+        "kpi",
+        "enhancement"
+      ],
+      "activeAgent": "design-system",
+      "agents": [
+        {
+          "id": "design-system",
+          "name": "🎨 Design System Agent",
+          "status": "Active",
+          "progress": 0,
+          "duration": 0,
+          "outputs": [],
+          "dependencies": [],
+          "nextAgent": "schema-architect",
+          "startedAt": "2025-09-18T22:48:26Z",
+          "completedAt": null
+        },
+        {
+          "id": "schema-architect",
+          "name": "🗄️ Schema Architect Agent",
+          "status": "Queued",
+          "progress": 0,
+          "duration": 0,
+          "outputs": [],
+          "dependencies": [
+            "design-system"
+          ],
+          "nextAgent": "component-architect",
+          "startedAt": null,
+          "completedAt": null
+        },
+        {
+          "id": "component-architect",
+          "name": "🏗️ Component Architect Agent",
+          "status": "Queued",
+          "progress": 0,
+          "duration": 0,
+          "outputs": [],
+          "dependencies": [
+            "design-system",
+            "schema-architect"
+          ],
+          "nextAgent": "feature-builder",
+          "startedAt": null,
+          "completedAt": null
+        },
+        {
+          "id": "feature-builder",
+          "name": "🚀 Feature Builder Agent",
+          "status": "Queued",
+          "progress": 0,
+          "duration": 0,
+          "outputs": [],
+          "dependencies": [
+            "component-architect"
+          ],
+          "nextAgent": "api-integration",
+          "startedAt": null,
+          "completedAt": null
+        },
+        {
+          "id": "api-integration",
+          "name": "🔌 API Integration Agent",
+          "status": "Queued",
+          "progress": 0,
+          "duration": 0,
+          "outputs": [],
+          "dependencies": [
+            "feature-builder"
+          ],
+          "nextAgent": "testing",
+          "startedAt": null,
+          "completedAt": null
+        },
+        {
+          "id": "testing",
+          "name": "🧪 Testing Agent",
+          "status": "Queued",
+          "progress": 0,
+          "duration": 0,
+          "outputs": [],
+          "dependencies": [
+            "feature-builder",
+            "api-integration"
+          ],
+          "nextAgent": "accessibility",
+          "startedAt": null,
+          "completedAt": null
+        },
+        {
+          "id": "accessibility",
+          "name": "♿ Accessibility Agent",
+          "status": "Queued",
+          "progress": 0,
+          "duration": 0,
+          "outputs": [],
+          "dependencies": [
+            "testing"
+          ],
+          "nextAgent": "performance",
+          "startedAt": null,
+          "completedAt": null
+        },
+        {
+          "id": "performance",
+          "name": "⚡ Performance Agent",
+          "status": "Queued",
+          "progress": 0,
+          "duration": 0,
+          "outputs": [],
+          "dependencies": [
+            "testing"
+          ],
+          "nextAgent": "documentation",
+          "startedAt": null,
+          "completedAt": null
+        },
+        {
+          "id": "documentation",
+          "name": "📚 Documentation Agent",
+          "status": "Queued",
+          "progress": 0,
+          "duration": 0,
+          "outputs": [],
+          "dependencies": [
+            "performance",
+            "accessibility"
+          ],
+          "nextAgent": null,
+          "startedAt": null,
+          "completedAt": null
+        }
+      ],
+      "qualityGates": [
+        {
+          "gate": {
+            "name": "Baseline Stability Gate",
+            "phase": "Foundation",
+            "criteria": [
+              "Auth flow functional in all browsers",
+              "Playwright tests pass consistently",
+              "Build pipeline succeeds",
+              "Environment documented"
+            ],
+            "threshold": 95,
+            "canBypass": false,
+            "validators": [
+              "testing",
+              "deployment",
+              "documentation"
+            ]
+          },
+          "state": "Pending",
+          "score": 0
+        },
+        {
+          "gate": {
+            "name": "Feature Enhancement Gate",
+            "phase": "Quality",
+            "criteria": [
+              "Pixel parity across breakpoints",
+              "Lighthouse >90 on all pages",
+              "Advanced filters working correctly",
+              "CSV export handles large datasets"
+            ],
+            "threshold": 92,
+            "canBypass": false,
+            "validators": [
+              "design-system",
+              "feature-builder",
+              "api-integration",
+              "testing",
+              "performance",
+              "accessibility"
+            ]
+          },
+          "state": "Pending",
+          "score": 0
+        },
+        {
+          "gate": {
+            "name": "Production Deployment Gate",
+            "phase": "Deployment",
+            "criteria": [
+              "Preview deployment stable",
+              "All integration tests pass",
+              "Client sign-off obtained",
+              "Production monitoring configured"
+            ],
+            "threshold": 95,
+            "canBypass": false,
+            "validators": [
+              "deployment",
+              "observability",
+              "documentation"
+            ]
+          },
+          "state": "Pending",
+          "score": 0
+        }
+      ],
+      "history": [],
+      "metadata": {
+        "invoiceDashboard": {
+          "id": "ID-002",
+          "summary": "Deliver accurate, real-time dashboard KPIs with responsive polish and resilient data flows.",
+          "masterPlanPhase": "Enhancement",
+          "clientPriority": "High",
+          "timelineDay": 4,
+          "blockers": [
+            {
+              "id": "BL-101",
+              "description": "Dashboard KPI accuracy unverified after Supabase migration",
+              "severity": "High",
+              "status": "Open",
+              "owner": "Schema Architect Agent"
+            },
+            {
+              "id": "BL-102",
+              "description": "Responsive layout polish required for hero and KPI cards",
+              "severity": "Medium",
+              "status": "Open",
+              "owner": "Design System Agent"
+            }
+          ],
+          "clientReviewStatus": "Not Ready",
+          "milestoneAlignment": {
+            "id": "MS-ENH-001",
+            "name": "Dashboard KPI enhancement approved",
+            "phase": "Enhancement",
+            "targetDay": 6,
+            "status": "Pending"
+          },
+          "riskMitigation": [
+            {
+              "risk": "Slow initial load for KPI queries",
+              "mitigation": "Introduce server actions with cached aggregates and Supabase real-time updates",
+              "owner": "API Integration Agent",
+              "status": "Planned"
+            },
+            {
+              "risk": "Chart rendering regressions on mobile",
+              "mitigation": "Define responsive breakpoints and add visual regression coverage",
+              "owner": "Design System Agent",
+              "status": "Planned"
+            }
+          ],
+          "acceptanceCriteria": [
+            "Pixel parity across breakpoints",
+            "Lighthouse >90 on all pages",
+            "Advanced filters working correctly",
+            "CSV export handles large datasets"
+          ],
+          "agents": [
+            {
+              "id": "design-system",
+              "name": "🎨 Design System Agent",
+              "status": "Active"
+            },
+            {
+              "id": "schema-architect",
+              "name": "🗄️ Schema Architect Agent",
+              "status": "Queued"
+            },
+            {
+              "id": "component-architect",
+              "name": "🏗️ Component Architect Agent",
+              "status": "Queued"
+            },
+            {
+              "id": "feature-builder",
+              "name": "🚀 Feature Builder Agent",
+              "status": "Queued"
+            },
+            {
+              "id": "api-integration",
+              "name": "🔌 API Integration Agent",
+              "status": "Queued"
+            },
+            {
+              "id": "testing",
+              "name": "🧪 Testing Agent",
+              "status": "Queued"
+            },
+            {
+              "id": "accessibility",
+              "name": "♿ Accessibility Agent",
+              "status": "Queued"
+            },
+            {
+              "id": "performance",
+              "name": "⚡ Performance Agent",
+              "status": "Queued"
+            },
+            {
+              "id": "documentation",
+              "name": "📚 Documentation Agent",
+              "status": "Queued"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "ID-003",
+      "title": "Invoice Filters & CSV Export",
+      "description": "Ship advanced invoice filtering, state persistence, and resilient CSV exports.",
+      "status": "In Progress",
+      "currentPhase": "Foundation",
+      "startTime": "2025-09-18T22:48:26Z",
+      "estimatedCompletion": "2025-09-21T22:48:26Z",
+      "overallQualityScore": 0,
+      "tags": [
+        "invoices",
+        "filters",
+        "export"
+      ],
+      "activeAgent": "design-system",
+      "agents": [
+        {
+          "id": "design-system",
+          "name": "🎨 Design System Agent",
+          "status": "Active",
+          "progress": 0,
+          "duration": 0,
+          "outputs": [],
+          "dependencies": [],
+          "nextAgent": "schema-architect",
+          "startedAt": "2025-09-18T22:48:26Z",
+          "completedAt": null
+        },
+        {
+          "id": "schema-architect",
+          "name": "🗄️ Schema Architect Agent",
+          "status": "Queued",
+          "progress": 0,
+          "duration": 0,
+          "outputs": [],
+          "dependencies": [
+            "design-system"
+          ],
+          "nextAgent": "component-architect",
+          "startedAt": null,
+          "completedAt": null
+        },
+        {
+          "id": "component-architect",
+          "name": "🏗️ Component Architect Agent",
+          "status": "Queued",
+          "progress": 0,
+          "duration": 0,
+          "outputs": [],
+          "dependencies": [
+            "design-system",
+            "schema-architect"
+          ],
+          "nextAgent": "feature-builder",
+          "startedAt": null,
+          "completedAt": null
+        },
+        {
+          "id": "feature-builder",
+          "name": "🚀 Feature Builder Agent",
+          "status": "Queued",
+          "progress": 0,
+          "duration": 0,
+          "outputs": [],
+          "dependencies": [
+            "component-architect"
+          ],
+          "nextAgent": "api-integration",
+          "startedAt": null,
+          "completedAt": null
+        },
+        {
+          "id": "api-integration",
+          "name": "🔌 API Integration Agent",
+          "status": "Queued",
+          "progress": 0,
+          "duration": 0,
+          "outputs": [],
+          "dependencies": [
+            "feature-builder"
+          ],
+          "nextAgent": "testing",
+          "startedAt": null,
+          "completedAt": null
+        },
+        {
+          "id": "testing",
+          "name": "🧪 Testing Agent",
+          "status": "Queued",
+          "progress": 0,
+          "duration": 0,
+          "outputs": [],
+          "dependencies": [
+            "api-integration"
+          ],
+          "nextAgent": "accessibility",
+          "startedAt": null,
+          "completedAt": null
+        },
+        {
+          "id": "accessibility",
+          "name": "♿ Accessibility Agent",
+          "status": "Queued",
+          "progress": 0,
+          "duration": 0,
+          "outputs": [],
+          "dependencies": [
+            "testing"
+          ],
+          "nextAgent": "performance",
+          "startedAt": null,
+          "completedAt": null
+        },
+        {
+          "id": "performance",
+          "name": "⚡ Performance Agent",
+          "status": "Queued",
+          "progress": 0,
+          "duration": 0,
+          "outputs": [],
+          "dependencies": [
+            "testing"
+          ],
+          "nextAgent": "deployment",
+          "startedAt": null,
+          "completedAt": null
+        },
+        {
+          "id": "deployment",
+          "name": "🚀 Deployment Agent",
+          "status": "Queued",
+          "progress": 0,
+          "duration": 0,
+          "outputs": [],
+          "dependencies": [
+            "performance",
+            "accessibility"
+          ],
+          "nextAgent": "documentation",
+          "startedAt": null,
+          "completedAt": null
+        },
+        {
+          "id": "documentation",
+          "name": "📚 Documentation Agent",
+          "status": "Queued",
+          "progress": 0,
+          "duration": 0,
+          "outputs": [],
+          "dependencies": [
+            "deployment"
+          ],
+          "nextAgent": null,
+          "startedAt": null,
+          "completedAt": null
+        }
+      ],
+      "qualityGates": [
+        {
+          "gate": {
+            "name": "Baseline Stability Gate",
+            "phase": "Foundation",
+            "criteria": [
+              "Auth flow functional in all browsers",
+              "Playwright tests pass consistently",
+              "Build pipeline succeeds",
+              "Environment documented"
+            ],
+            "threshold": 95,
+            "canBypass": false,
+            "validators": [
+              "testing",
+              "deployment",
+              "documentation"
+            ]
+          },
+          "state": "Pending",
+          "score": 0
+        },
+        {
+          "gate": {
+            "name": "Feature Enhancement Gate",
+            "phase": "Quality",
+            "criteria": [
+              "Pixel parity across breakpoints",
+              "Lighthouse >90 on all pages",
+              "Advanced filters working correctly",
+              "CSV export handles large datasets"
+            ],
+            "threshold": 92,
+            "canBypass": false,
+            "validators": [
+              "design-system",
+              "feature-builder",
+              "api-integration",
+              "testing",
+              "performance",
+              "accessibility"
+            ]
+          },
+          "state": "Pending",
+          "score": 0
+        },
+        {
+          "gate": {
+            "name": "Production Deployment Gate",
+            "phase": "Deployment",
+            "criteria": [
+              "Preview deployment stable",
+              "All integration tests pass",
+              "Client sign-off obtained",
+              "Production monitoring configured"
+            ],
+            "threshold": 95,
+            "canBypass": false,
+            "validators": [
+              "deployment",
+              "observability",
+              "documentation"
+            ]
+          },
+          "state": "Pending",
+          "score": 0
+        }
+      ],
+      "history": [],
+      "metadata": {
+        "invoiceDashboard": {
+          "id": "ID-003",
+          "summary": "Deliver advanced invoice filtering and CSV export with strong UX, performance, and observability.",
+          "masterPlanPhase": "Enhancement",
+          "clientPriority": "High",
+          "timelineDay": 5,
+          "blockers": [
+            {
+              "id": "BL-201",
+              "description": "Invoice filters lack persisted state and advanced criteria support",
+              "severity": "High",
+              "status": "Open",
+              "owner": "Component Architect Agent"
+            },
+            {
+              "id": "BL-202",
+              "description": "CSV exports lack progress feedback and memory safeguards",
+              "severity": "High",
+              "status": "Open",
+              "owner": "Feature Builder Agent"
+            }
+          ],
+          "clientReviewStatus": "Not Ready",
+          "milestoneAlignment": {
+            "id": "MS-ENH-002",
+            "name": "Invoice filters & export ready for client sign-off",
+            "phase": "Enhancement",
+            "targetDay": 7,
+            "status": "Pending"
+          },
+          "riskMitigation": [
+            {
+              "risk": "Large invoice exports timing out during streaming",
+              "mitigation": "Implement chunked streaming with progress UI and cancellation support",
+              "owner": "Feature Builder Agent",
+              "status": "Planned"
+            },
+            {
+              "risk": "Filter UX inconsistency across breakpoints",
+              "mitigation": "Adopt shadcn/ui responsive primitives with keyboard support tests",
+              "owner": "Design System Agent",
+              "status": "Planned"
+            }
+          ],
+          "acceptanceCriteria": [
+            "Advanced filters covered by automated tests",
+            "CSV export functionality verified with large datasets",
+            "Filter persistence and URL state management",
+            "Mobile-responsive filter interface",
+            "Performance validation for 10k+ invoice exports"
+          ],
+          "agents": [
+            {
+              "id": "design-system",
+              "name": "🎨 Design System Agent",
+              "status": "Active"
+            },
+            {
+              "id": "schema-architect",
+              "name": "🗄️ Schema Architect Agent",
+              "status": "Queued"
+            },
+            {
+              "id": "component-architect",
+              "name": "🏗️ Component Architect Agent",
+              "status": "Queued"
+            },
+            {
+              "id": "feature-builder",
+              "name": "🚀 Feature Builder Agent",
+              "status": "Queued"
+            },
+            {
+              "id": "api-integration",
+              "name": "🔌 API Integration Agent",
+              "status": "Queued"
+            },
+            {
+              "id": "testing",
+              "name": "🧪 Testing Agent",
+              "status": "Queued"
+            },
+            {
+              "id": "accessibility",
+              "name": "♿ Accessibility Agent",
+              "status": "Queued"
+            },
+            {
+              "id": "performance",
+              "name": "⚡ Performance Agent",
+              "status": "Queued"
+            },
+            {
+              "id": "deployment",
+              "name": "🚀 Deployment Agent",
+              "status": "Queued"
+            },
+            {
+              "id": "documentation",
+              "name": "📚 Documentation Agent",
+              "status": "Queued"
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "handoffs": {}
+}

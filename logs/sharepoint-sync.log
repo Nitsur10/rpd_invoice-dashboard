@@ -1,0 +1,64 @@
+[2025-09-09T12:18:18.454Z] INFO: Starting download from SharePoint to: /Users/niteshsure/Documents/todo/invoice-dashboard/data/onedrive/test-2025-09-09-current-invoices.xlsx
+[2025-09-09T12:18:18.455Z] INFO: Converted sharing URL to download URL
+{
+  "original": "https://rudraprojects-my.sharepoint.com/:x:/g/personal/satyagala_rudraprojects_onmicrosoft_com/ER3BAYrWG4lDiT7yCKNAV5QBEJT7k7j5qiJUJe3nYw2xyw?e=hgKmsq",
+  "converted": "https://rudraprojects-my.sharepoint.com/:u:/g/personal/satyagala_rudraprojects_onmicrosoft_com/ER3BAYrWG4lDiT7yCKNAV5QBEJT7k7j5qiJUJe3nYw2xyw&download=1&e=hgKmsq"
+}
+[2025-09-09T12:18:19.277Z] INFO: HTTP Response: 200
+[2025-09-09T12:18:19.331Z] INFO: File downloaded successfully: /Users/niteshsure/Documents/todo/invoice-dashboard/data/onedrive/test-2025-09-09-current-invoices.xlsx
+[2025-09-09T12:20:10.784Z] INFO: Checking SharePoint file for updates...
+[2025-09-09T12:20:10.786Z] INFO: Starting download from SharePoint to: /Users/niteshsure/Documents/todo/invoice-dashboard/data/onedrive/2025-09-09-current-invoices.xlsx
+[2025-09-09T12:20:10.787Z] INFO: Converted sharing URL to download URL
+{
+  "original": "https://rudraprojects-my.sharepoint.com/:x:/g/personal/satyagala_rudraprojects_onmicrosoft_com/ER3BAYrWG4lDiT7yCKNAV5QBEJT7k7j5qiJUJe3nYw2xyw?e=hgKmsq",
+  "converted": "https://rudraprojects-my.sharepoint.com/:u:/g/personal/satyagala_rudraprojects_onmicrosoft_com/ER3BAYrWG4lDiT7yCKNAV5QBEJT7k7j5qiJUJe3nYw2xyw&download=1&e=hgKmsq"
+}
+[2025-09-09T12:20:11.326Z] INFO: HTTP Response: 200
+[2025-09-09T12:20:11.382Z] INFO: File downloaded successfully: /Users/niteshsure/Documents/todo/invoice-dashboard/data/onedrive/2025-09-09-current-invoices.xlsx
+[2025-09-09T12:20:11.383Z] INFO: New file version detected, processing...
+[2025-09-09T12:20:11.383Z] INFO: Processing downloaded file: /Users/niteshsure/Documents/todo/invoice-dashboard/data/onedrive/2025-09-09-current-invoices.xlsx
+[2025-09-09T12:20:11.385Z] INFO: File processing completed
+{
+  "totalInvoices": 3,
+  "totalAmount": 7036.5,
+  "bySourceTab": {
+    "tab1": 1,
+    "tab2": 1,
+    "tab3": 1
+  },
+  "processedAt": "2025-09-09T12:20:11.385Z"
+}
+[2025-09-09T12:20:11.386Z] INFO: Last sync time updated: 2025-09-09T12:20:11.386Z
+[2025-09-09T12:20:11.387Z] INFO: Uploading processed files to Lightsail...
+[2025-09-09T12:20:12.941Z] INFO: Uploaded json file: invoices-2025-09-09.json
+[2025-09-09T12:20:13.472Z] INFO: Uploaded csv file: invoices-2025-09-09.csv
+[2025-09-09T12:20:13.958Z] INFO: Uploaded summary file: summary-2025-09-09.json
+[2025-09-09T12:20:13.958Z] INFO: Upload to Lightsail completed
+[2025-09-09T12:44:22.877Z] INFO: Checking SharePoint file for updates...
+[2025-09-09T12:44:22.878Z] INFO: Starting download from SharePoint to: /Users/niteshsure/Documents/todo/invoice-dashboard/data/onedrive/2025-09-09-current-invoices.xlsx
+[2025-09-09T12:44:22.879Z] INFO: Converted sharing URL to download URL
+{
+  "original": "https://rudraprojects-my.sharepoint.com/:x:/g/personal/satyagala_rudraprojects_onmicrosoft_com/ER3BAYrWG4lDiT7yCKNAV5QBEJT7k7j5qiJUJe3nYw2xyw?e=hgKmsq",
+  "converted": "https://rudraprojects-my.sharepoint.com/:u:/g/personal/satyagala_rudraprojects_onmicrosoft_com/ER3BAYrWG4lDiT7yCKNAV5QBEJT7k7j5qiJUJe3nYw2xyw&download=1&e=hgKmsq"
+}
+[2025-09-09T12:44:23.286Z] INFO: HTTP Response: 200
+[2025-09-09T12:44:23.342Z] INFO: File downloaded successfully: /Users/niteshsure/Documents/todo/invoice-dashboard/data/onedrive/2025-09-09-current-invoices.xlsx
+[2025-09-09T12:44:23.345Z] INFO: New file version detected, processing...
+[2025-09-09T12:44:23.345Z] INFO: Processing downloaded file: /Users/niteshsure/Documents/todo/invoice-dashboard/data/onedrive/2025-09-09-current-invoices.xlsx
+[2025-09-09T12:44:23.347Z] INFO: File processing completed
+{
+  "totalInvoices": 3,
+  "totalAmount": 7036.5,
+  "bySourceTab": {
+    "tab1": 1,
+    "tab2": 1,
+    "tab3": 1
+  },
+  "processedAt": "2025-09-09T12:44:23.346Z"
+}
+[2025-09-09T12:44:23.348Z] INFO: Last sync time updated: 2025-09-09T12:44:23.348Z
+[2025-09-09T12:44:23.348Z] INFO: Uploading processed files to Lightsail...
+[2025-09-09T12:44:24.685Z] INFO: Uploaded json file: invoices-2025-09-09.json
+[2025-09-09T12:44:25.152Z] INFO: Uploaded csv file: invoices-2025-09-09.csv
+[2025-09-09T12:44:25.627Z] INFO: Uploaded summary file: summary-2025-09-09.json
+[2025-09-09T12:44:25.628Z] INFO: Upload to Lightsail completed

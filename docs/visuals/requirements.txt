@@ -1,0 +1,4 @@
+# Python dependencies for workflow visualization scripts
+plotly>=5.20
+pandas>=2.2
+kaleido>=0.2
