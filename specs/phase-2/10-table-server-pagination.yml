@@ -1,0 +1,61 @@
+name: "[IDASH] Server-Side Table Pagination + React Query Caching"
+description: |
+  Implement proper server-side pagination for the invoices table to avoid loading 1000+ rows at once.
+  Add React Query caching for smooth navigation and performance optimization.
+
+labels:
+  - "repo/invoice-dashboard"
+  - "phase-2"
+  - "performance"
+  - "pagination"
+
+priority: "high"
+
+acceptance_criteria:
+  - Table calls /api/invoices with page, limit, sortBy, sortOrder parameters
+  - React Query caches paginated results for smooth navigation
+  - No client-side fetching of all 1000+ rows at once
+  - Pagination controls reflect server-side page count
+  - Sorting triggers new server requests with proper parameters
+  - Filtering works with server-side pagination
+  - Smooth UX with no jank during page changes
+
+files_to_modify:
+  - "src/app/invoices/page.tsx"
+  - "src/components/invoices/data-table.tsx"
+  - "src/components/invoices/data-table-toolbar.tsx"
+  - "src/lib/hooks/" (create pagination hooks)
+
+technical_requirements:
+  - Use @tanstack/react-table with manualPagination: true
+  - Use @tanstack/react-query for caching paginated requests  
+  - Implement proper loading states during page changes
+  - Handle edge cases (empty pages, filtering, sorting)
+  - Maintain current filtering and sorting functionality
+  - Add optimistic updates for better UX
+
+implementation_steps:
+  1. Install @tanstack/react-query if not already present
+  2. Create usePaginatedInvoices hook with React Query
+  3. Update data-table.tsx to use manual pagination mode
+  4. Modify page.tsx to use server-side pagination hook
+  5. Update toolbar and filters to work with server pagination
+  6. Add loading states and skeleton components
+  7. Test pagination, sorting, and filtering together
+  8. Performance test with large datasets
+
+api_requirements:
+  - /api/invoices accepts: page, limit, sortBy, sortOrder, filters
+  - Returns: { data: Invoice[], pagination: { total, pageCount, pageSize, pageIndex } }
+  - Consistent with existing API contract from Phase 1
+
+quality_gates:
+  - Network tab shows paginated requests (not 1000+ row fetches)
+  - Pagination controls work correctly with server data
+  - Sorting and filtering work with server-side implementation
+  - React Query dev tools show proper caching behavior
+  - No client-side sorting/filtering of large datasets
+  - Page changes are smooth without loading entire dataset
+
+branch: "feat/phase2-10-table-server-pagination"
+estimated_effort: "6-8 hours"

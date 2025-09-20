@@ -1,0 +1,54 @@
+name: "[IDASH] Remove Legacy JSON Runtime Dependencies"
+description: |
+  Remove or quarantine runtime usage of legacy JSON data files that were used for prototyping.
+  Keep files as seed/fixtures if needed for tests, but eliminate runtime imports in UI components.
+
+labels:
+  - "repo/invoice-dashboard"
+  - "phase-2" 
+  - "cleanup"
+  - "tech-debt"
+
+priority: "high"
+
+acceptance_criteria:
+  - No runtime imports of real-consolidated-data.ts in components/pages
+  - No runtime imports of real-invoice-data.ts in components/pages 
+  - No runtime imports of sample-data.ts in components/pages
+  - All chart and activity components function via API endpoints
+  - Build passes without errors after removal
+  - Tests continue to pass (may need adjustment to use API mocks)
+
+files_to_modify:
+  - "src/lib/real-consolidated-data.ts" (delete or move to fixtures/)
+  - "src/lib/real-invoice-data.ts" (delete or move to fixtures/) 
+  - "src/lib/sample-data.ts" (delete or move to fixtures/)
+  - Any remaining component files with legacy imports
+
+technical_requirements:
+  - Run `rg "real-consolidated-data|real-invoice-data|sample-data" --type ts src/` to find imports
+  - Remove or replace all found imports in src/components/ and src/app/
+  - If tests need the data, move files to tests/fixtures/ directory
+  - Add mappers in tests if API mocking requires legacy data shape
+  - Ensure no runtime dependencies on these files remain
+
+implementation_steps:
+  1. Audit all imports of legacy JSON files with ripgrep
+  2. Verify Task 08 completed (charts use APIs)
+  3. Remove legacy file imports from components
+  4. Move legacy files to tests/fixtures/ if needed for testing
+  5. Update any remaining test files to use fixtures or API mocks
+  6. Run build and tests to ensure no breakage
+  7. Delete unused legacy files
+
+quality_gates:
+  - `rg` shows no legacy JSON imports in src/components/ or src/app/
+  - Build succeeds without missing module errors
+  - All existing tests pass
+  - Bundle size reduced (no large JSON in client bundle)
+
+branch: "feat/phase2-09-remove-legacy-json"
+estimated_effort: "2-3 hours"
+
+depends_on:
+  - "08-charts-activity-api"

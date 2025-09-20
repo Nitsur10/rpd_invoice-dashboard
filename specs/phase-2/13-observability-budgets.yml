@@ -1,0 +1,65 @@
+name: "[IDASH] Observability Budgets + Web Vitals (Optional)"
+description: |
+  Add performance budgets and observability to the invoice dashboard.
+  Implement bundle size monitoring and optional Web Vitals collection for performance tracking.
+
+labels:
+  - "repo/invoice-dashboard"
+  - "phase-2"
+  - "performance"
+  - "monitoring" 
+  - "optional"
+
+priority: "low"
+
+acceptance_criteria:
+  - CI pipeline includes bundle size budget checks
+  - Bundle size warnings when budgets are exceeded  
+  - Basic performance monitoring in place
+  - Optional Web Vitals collection implemented
+  - Performance regression detection in CI
+  - Documentation for performance budgets
+
+files_to_modify:
+  - ".github/workflows/ci.yml"
+  - "next.config.ts" (bundle analyzer config)
+  - "src/lib/analytics.ts" (optional Web Vitals)
+  - "package.json" (performance scripts)
+
+technical_requirements:
+  - Bundle size analysis in CI with defined budgets
+  - Next.js Bundle Analyzer integration
+  - Optional: Web Vitals reporting with Next.js reportWebVitals
+  - Performance budget thresholds defined
+  - Fail CI if critical budgets exceeded (optional)
+
+implementation_steps:
+  1. Install @next/bundle-analyzer and related tools
+  2. Configure bundle analysis in next.config.ts
+  3. Add bundle size check step to CI workflow
+  4. Define performance budgets (JS, CSS, total size)
+  5. Optional: Implement Web Vitals collection
+  6. Add performance testing scripts to package.json
+  7. Document performance guidelines
+
+performance_budgets:
+  - Total JavaScript: 1MB compressed
+  - Total CSS: 100KB compressed  
+  - Main bundle: 500KB compressed
+  - Page bundles: 200KB compressed each
+
+optional_web_vitals:
+  - Collect LCP, FID, CLS metrics
+  - Send to analytics service (console.log for now)
+  - Track route-level performance
+  - Monitor performance regressions
+
+quality_gates:
+  - CI logs bundle sizes for all builds
+  - Warnings appear when budgets are near limits
+  - Bundle analyzer reports are generated
+  - Performance documentation is clear
+  - Optional: Web Vitals are collected and logged
+
+branch: "feat/phase2-13-observability-budgets"
+estimated_effort: "3-4 hours"
