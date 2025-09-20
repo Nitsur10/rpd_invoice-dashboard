@@ -1,7 +1,6 @@
 {
   "version": 2,
   "framework": "nextjs",
-  "rootDirectory": "invoice-dashboard",
   "buildCommand": "TURBOPACK=0 npm run build",
   "installCommand": "npm ci --no-optional",
   "cleanUrls": true,
@@ -12,3 +11,4 @@
     "SUPABASE_INVOICES_TABLE": "invoices"
   }
 }
+
