@@ -12,6 +12,8 @@ const nextConfig = {
     // Allow build to complete even with ESLint errors for now
     ignoreDuringBuilds: true,
   },
+  // Disable static generation to avoid Html import issues
+  output: 'standalone',
   // Webpack configuration optimized for Supabase-only setup
   webpack: (config, { isServer }) => {
     if (!isServer) {
