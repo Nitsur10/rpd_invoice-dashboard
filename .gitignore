@@ -47,3 +47,4 @@ temp/
 
 # Prisma generated files
 src/generated/prisma
+.vercel
