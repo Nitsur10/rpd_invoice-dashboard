@@ -63,13 +63,12 @@ const nextConfig: NextConfig = {
               priority: 10,
             }
           }
-        },
-        // Performance hints
-        performance: {
-          maxAssetSize: 250000,
-          maxEntrypointSize: 400000,
-          hints: 'warning'
         }
+      };
+      config.performance = {
+        maxAssetSize: 250000,
+        maxEntrypointSize: 400000,
+        hints: 'warning'
       };
     }
     
