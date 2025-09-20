@@ -13,7 +13,8 @@ const nextConfig = {
     ignoreDuringBuilds: true,
   },
   // Disable static generation to avoid Html import issues
-  output: 'standalone',
+  output: 'export',
+  trailingSlash: true,
   // Webpack configuration optimized for Supabase-only setup
   webpack: (config, { isServer }) => {
     if (!isServer) {
